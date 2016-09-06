@@ -1,0 +1,120 @@
+#!/usr/bin/env python2
+"""
+Name :          conditions/is_xineramawide
+Created :       August 28 2016
+Author :        Will Pittman
+Contact :       willjpittman@gmail.com
+________________________________________________________________________________
+Description :   Returns true if any of the following conditions are met:
+
+                    * Xlib reports Xinerama enabled,
+                      single screen,
+                      screen is wider than 1920x1080
+
+                    * Xlib reports Xinerama unavailable
+                      Option "Xinerama" "1"  present in xorg.conf
+
+________________________________________________________________________________
+"""
+
+import json
+import os
+import re
+import sys
+import logging
+logger = logging.getLogger(__name__)
+
+try:
+    import Xlib.display
+except( ImportError ):
+    if sys.version_info[0] == 2:
+        cmd = 'pip2 install python2-xlib'
+    else:
+        cmd = 'pip install python-xlib'
+    print( 'Requires python2-xlib. Install with command:\n' + cmd )
+    sys.exit(1)
+
+
+
+class Is_XineramaWide( object ):
+    def test(self):
+
+        if sys.platform not in ('linux','linux2'):
+            return False
+
+        if self.xlib_xinerama_enabled_and_widescreen():
+            logger.info('Xlib detected Xinerama enabled. screen-ratio wider than 1920x1080')
+            return True
+
+        if self.xinerama_enabled_in_xorgconf():
+            logger.info('Option "Xinerama" "1" detected in Xorg.conf')
+            return True
+
+        return False
+
+    def xlib_xinerama_enabled_and_widescreen(self):
+        """
+        This is the most accurate way of determining if Xinerama
+        is enabled, an a widescreen setup is detected.
+
+        returns True if
+            * Xlib reports that xinerama is enabled,
+            * only a single screen is reported
+            * that screen's aspect-ratio is wider than 1.7
+              (1920/1080) == 1.777
+        """
+        display = Xlib.display.Display()
+
+        if not display.has_extension('XINERAMA'):
+            return False
+
+        if display.xinerama_is_active():
+            screen_info = display.xinerama_query_screens()._data
+
+            if len(screen_info['screens']) == 1:
+                screen = screen_info['screens'][0]
+                width  = float(screen['height']) - float(screen['y'])
+                height = float(screen['width'])  - float(screen['x'])
+
+                if int((width / height) * 10)  >  17:
+                    return True
+        return False
+
+    def xinerama_enabled_in_xorgconf(self):
+        """
+        My NVIDIA driver (with Xinerama enabled)
+        reports that Xinerama is unavailable, and disabled.
+
+
+        left without Xrandr or Xlib's xinerama_* methods
+        to get information from, all I can think of doing is
+        checking if Xinerama is enabled in:
+         `/etc/X11/xorg.conf`
+
+
+        __NOTE__:   Without in depth research, the info on arch-wiki seems
+                    to indicate issues with Xinerama and the latest Nvidia binary
+                    drivers: 2016/08/28
+
+                    https://wiki.archlinux.org/index.php/multihead#Xinerama
+        """
+        if os.path.isfile('/etc/X11/xorg.conf'):
+
+            with open('/etc/X11/xorg.conf', 'r') as xorgconf:
+
+                for line in xorgconf.readlines():
+                    if 'Xinerama' in line:
+
+                        if re.match('^[ \t]*Option[ \t]*"Xinerama"*?', line):
+                            if line.strip().split()[2] == '"1"':
+                                return True
+                            else:
+                                return False
+                            break
+        return False
+
+
+logging.basicConfig( level=logging.DEBUG )
+print(json.dumps( {'return':Is_XineramaWide().test()} ))
+sys.exit(0)
+

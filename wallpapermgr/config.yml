@@ -1,0 +1,44 @@
+# vim: ft=yaml
+###########################################################################################
+# Name :          ~/.config/wallpapermgr/config.yml
+# Created :       August 28 2016
+# Author :        Will Pittman
+# Contact :       willjpittman@gmail.com
+#_________________________________________________________________________________________
+# Description :   configuration for wallpapermgr
+#_________________________________________________________________________________________
+###########################################################################################
+
+
+general:
+   conditions_path:        Null
+
+archives:
+
+   normal_walls:
+      apply_method: feh
+      archive:      ~/progs/wallpapers/normal_walls.tar
+      gitroot:      ~/progs/wallpapers
+      gitsource:    ssh://gitbox:/home/git/wallpapers
+      desc:         "wallpapers with a normal aspect ratio (ex: 16:9)"
+      conditions: 
+         is_default: True
+
+   wide_walls:
+      apply_method: feh
+      archive:      ~/progs/wallpapers/wide_walls.tar
+      gitroot:      ~/progs/wallpapers
+      gitsource:    ssh://gitbox:/home/git/wallpapers
+      desc:         "wallpapers for wide-multimonitor aspect ratios (ex: 32:9, 48:9)"
+      conditions:
+         is_xineramawide: True
+
+
+#   normal_walls:
+#      apply_method: commandline
+#      apply_args:   feh --bg-scale {filepath}
+#      archive:    ~/progs/wallpapers/normal_walls.tar
+#      desc:       "wallpapers with a normal aspect ratio (ex: 16:9)"
+#      conditions: 
+#         is_default: True
+
