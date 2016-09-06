@@ -46,6 +46,7 @@ import sys
 import tarfile
 
 ## personal
+from  .collectiontools import has_items
 from . import excepts
 from . import filedata
 from . import gitoperations
@@ -57,7 +58,6 @@ import daemon
 import yaml
 import git
 
-from   openlibpython.collectiontools import has_items
 
 
 ## Globals
