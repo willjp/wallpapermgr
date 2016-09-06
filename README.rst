@@ -58,6 +58,8 @@ _________________________________________
 _________________________________________
 
 
+**__WARNING__**: Still in Alpha, some documented CLI commands are still unfinished.
+
 
 Background
 ----------
