@@ -56,6 +56,15 @@ setup(
     keywords         = 'supercli cli color colour argparse logging interface',
     install_requires = ['PyYaml','six','GitPython','daemon'],
     packages         = setuptools.find_packages( exclude=['tests*','images*'] ),
+    #scripts          = [
+    #                        'bin/wallmgr',
+    #                        #'{pkgname}/bin/wallmgr'.format(**locals())
+    #                        #'{pkgname}/wallpapermgr.py'.format(**locals()),
+    #                    ],
+    #console_scripts  = [
+    #                        '{pkgname}/bin/wallmgr'.format(**locals())
+    #                    ],
+
 
     zip_safe         = False,
 
