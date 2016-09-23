@@ -10,9 +10,9 @@ ________________________________________________________________________________
 """
 from __future__  import absolute_import
 from __future__ import unicode_literals
-from wallpapermgr import wallpapermgr
+from wallpapermgr.wallpapermgr import CLI_Interface
 
-cli = wallpapermgr.CLI_Interface()
+cli = CLI_Interface()
 cli.parse()
 
 

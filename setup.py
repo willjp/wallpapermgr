@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from distutils.core import setup, Extension
+from   distutils.core import setup, Extension
 import setuptools
 import os
 import sys
@@ -38,6 +38,16 @@ def get_version():
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
+def get_zsh_completionpath():
+    paths = (
+        '/usr/local/share/zsh/functions/Completion/Unix',
+        '/usr/share/zsh/functions/Completion/Unix',
+        )
+    for path in paths:
+        if os.path.isdir( path ):
+            return path
+    raise RuntimeError('No fpath could be found for installation in: %s' % repr(paths) )
+
 
 
 ## get info
@@ -56,22 +66,21 @@ setup(
     keywords         = 'supercli cli color colour argparse logging interface',
     install_requires = ['PyYaml','six','GitPython','daemon'],
     packages         = setuptools.find_packages( exclude=['tests*','images*'] ),
-    #scripts          = [
-    #                        'bin/wallmgr',
-    #                        #'{pkgname}/bin/wallmgr'.format(**locals())
-    #                        #'{pkgname}/wallpapermgr.py'.format(**locals()),
-    #                    ],
-    #console_scripts  = [
-    #                        '{pkgname}/bin/wallmgr'.format(**locals())
-    #                    ],
-
-
-    zip_safe         = False,
-
+    py_modules       = ['wallpapermgr'],
+    scripts          = ['bin/wallmgr'],
+    zip_safe     = False, ## zip safe, but I'd prefer people can browse source
     package_data = {
-        ''         : ['*.txt', '*.rst'],
+        ''         : [
+                        '*.txt',
+                        '*.rst',
+                        'apply_methods/*',
+                        'archive_conditions/*'
+                    ],
         'supercli' : ['examples/*'],
     },
+    data_files = [
+        ( get_zsh_completionpath() + '/_wallmgr', ['bin/_wallmgr'] ),
+        ],
 
     classifiers      = [
         'Development Status :: 3 - Alpha',
@@ -85,4 +94,6 @@ setup(
         'Operating System :: POSIX :: BSD',
     ],
 )
+
+
 

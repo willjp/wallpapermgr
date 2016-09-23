@@ -46,7 +46,7 @@ import sys
 import tarfile
 
 ## personal
-from  .collectiontools import has_items
+from .collectiontools import has_items
 from . import excepts
 from . import filedata
 from . import gitoperations
@@ -1147,9 +1147,9 @@ class CLI_Interface():
 
 
 
-if __name__ == '__main__':
-    from . import wallpapermgr
-
-    cli = wallpapermgr.CLI_Interface()
-    print( cli )
+#if __name__ == '__main__':
+#    from . import wallpapermgr
+#
+#    cli = wallpapermgr.CLI_Interface()
+#    print( cli )
 
