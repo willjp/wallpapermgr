@@ -79,7 +79,7 @@ setup(
         'supercli' : ['examples/*'],
     },
     data_files = [
-        ( get_zsh_completionpath() + '/_wallmgr', ['bin/_wallmgr'] ),
+        ( get_zsh_completionpath(), ['bin/_wallmgr'] ),
         ],
 
     classifiers      = [
