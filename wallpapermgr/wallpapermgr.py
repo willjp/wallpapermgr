@@ -44,6 +44,7 @@ import json
 import os
 import sys
 import tarfile
+import socket
 
 ## personal
 from .collectiontools import has_items
@@ -737,6 +738,48 @@ class DisplayWallpaper(WallpaperArchiveBase):
             fw.write( json.dumps(self.data, indent=2) )
 
 
+    def display_on_interval(self, interval=120):
+        """
+        Starts a process that runs in the background,
+        periodically changing the wallpaper.
+        """
+        with daemon.DaemonContext( detach_process=True ):
+            self._display_interval_loop(interval)
+
+    def _display_interval_loop(self,interval):
+        """
+        Starts a loop that periodically displays a wallpaper
+        """
+
+        while True:
+            pass
+
+
+
+class WallpaperDaemon(object):
+    def __init__(self,socket):
+        self._socket = socket
+
+    def _validat_args(self):
+        if not isinstance( self._socket, socket.socket ):
+            raise TypeError('socket argument must be of type socket.socket')
+
+    def start(self):
+        sock = socket.socket( socket.AF_INET, socket.SOCK_STREAM )
+        sock.bind(('127.0.0.1',0))
+        port = sock.getsockname()[1]
+
+        ## create a JSON lockfile that stores:
+        ## pid, sock(fam/type), addr,
+        ##
+        ## (check to see if modifying the lockfile's contents is possible using the lockfile module)
+        ## (or if info should be stored elsewhere)
+
+    def send_message(self,message):
+        ## messages should be valid json.
+        ## json format should match apply_methods.
+        pass
+
 
 class DataFile(WallpaperArchiveBase):
     def __init__(self, shuffle=False, recreate_datafile=False ):
@@ -1147,9 +1190,9 @@ class CLI_Interface():
 
 
 
-#if __name__ == '__main__':
-#    from . import wallpapermgr
-#
-#    cli = wallpapermgr.CLI_Interface()
-#    print( cli )
+if __name__ == '__main__':
+    from . import wallpapermgr
+
+    cli = wallpapermgr.CLI_Interface()
+    print( cli )
 
