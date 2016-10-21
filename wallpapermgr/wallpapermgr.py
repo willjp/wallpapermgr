@@ -976,8 +976,8 @@ class Archive(WallpaperArchiveBase):
 class CLI_Interface():
     def __init__(self):
         self.parser = ArgumentParser(
-            cli_commandname = 'wallmgr',
-            description = (
+            autocomp_cmd = 'wallmgr',
+            description  = (
                 'wallpapermgr is a modular program to manage/display collections of wallpapers. \n'
                 '\n'
                 'Wallpapers are categorized into tar archives, and packaged into git project(s) \n'
@@ -1185,7 +1185,7 @@ class CLI_Interface():
                 )
 
 
-    def create_autocompleters(self,cli_commandname):
+    def create_autocompleters(self,autocomp_cmd):
         comptxt = self.parser.create_autocompleters(cli_commandname)
 
 
