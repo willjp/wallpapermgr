@@ -21,7 +21,7 @@ Unpublished to Pypy
 ------
 * restructured class Archive() so that methods are used instead
   or arguments to __init__... what was I thinking..
-
+* append now reloads the datafile that stores the archive's conts
 * added ability to print all archives with descriptions
 
 TODO:

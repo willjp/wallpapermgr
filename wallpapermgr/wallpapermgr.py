@@ -298,7 +298,7 @@ class WallpaperArchiveBase(object):
                 return return_json['return']
 
 
-    def get_wallsequence(self):
+    def get_wallsequence(self, reload_tarfiles=False ):
         """
         Creates or loads a random sequence of wallpapers.
 
@@ -317,8 +317,8 @@ class WallpaperArchiveBase(object):
         ## if datafile does not exist, create
         ##
         ## otherwise read/create archive info if missing
-        if not os.path.isfile( datafile ):
-            (data, last_fileno, wall_sequence) = self._refresh_wallsequences()
+        if not os.path.isfile( datafile ) or reload_tarfiles == True:
+            (data, last_fileno, wall_sequence) = self._refresh_wallsequences( datafile )
         else:
             (data, last_fileno, wall_sequence) = self._get_saved_wallsequence()
 
@@ -403,7 +403,6 @@ class WallpaperArchiveBase(object):
         ## tar-archive of wallpapers
         config       = self.config
 
-        import ipdb;ipdb.set_trace()
         data = self.get_saveddata()
         for archive_name in config['archives']:
             archive_path = config['archives'][ archive_name ]['archive']
@@ -908,6 +907,10 @@ class Archive(WallpaperArchiveBase):
         if has_items( archive_data, ('gitroot','gitsource') ):
             gitoperations.Git().git_commitpush( archive_data['gitroot'] )
 
+        ## add all the new files to the datafile
+        get_wallsequence( reload_tarfiles=True )
+
+
     def remove(self, archive_name):
         """
         Delete an archive
@@ -945,12 +948,12 @@ class Archive(WallpaperArchiveBase):
             return
 
         print('')
-        print(' Archive Name       Description' )
-        print('===============    =============' )
+        print(' Archive Name       Description ' + ' '*70 +'Location' )
+        print('===============    =============' + ' '*70 +'========' )
         for archive_name in self.config['archives']:
             info = {'name':archive_name}
             info.update(self.config['archives'][archive_name])
-            print( '{name:<15} -  {desc}'.format(**info) )
+            print( '{name:>15} -  {desc:<80}   "{archive}"'.format(**info) )
         print('')
 
 
@@ -982,11 +985,12 @@ class CLI_Interface():
         args = self.parser.parse_args()
 
     def subparser_shortcmds(self):
-        parser = self.subparsers.add_parser( 'next',   help='Display next wallpaper\n (short for `wallmgr display --next`)' )
-        parser = self.subparsers.add_parser( 'prev',   help='Display previous wallpaper\n (short for `wallmgr display --prev`)' )
+        parser = self.subparsers.add_parser( 'next',    help='Display next wallpaper\n (short for `wallmgr display --next`)' )
+        parser = self.subparsers.add_parser( 'prev',    help='Display previous wallpaper\n (short for `wallmgr display --prev`)' )
         parser = self.subparsers.add_parser( 'shuffle', help='Shuffle existing order of wallpapers\n (short for `wallmgr data --shuffle-order`)' )
-        parser = self.subparsers.add_parser( 'pull',   help='Pull latest wallpapers from git repository')
-        parser = self.subparsers.add_parser( 'push',   help='Push wallpapers to git remote')
+        parser = self.subparsers.add_parser( 'pull',    help='Pull latest wallpapers from git repository')
+        parser = self.subparsers.add_parser( 'push',    help='Push wallpapers to git remote')
+        parser = self.subparsers.add_parser( 'ls',      help='List configured archives')
 
     def subparser_display(self):
         parser = self.subparsers.add_parser( 'display', help='Commands related to Displaying wallpapers\n (see `wallmgr display --help`)' )
@@ -1079,6 +1083,7 @@ class CLI_Interface():
         elif args.subparser_name == 'shuffle': DataFile( shuffle=True )
         elif args.subparser_name == 'push':    DisplayWallpaper( offset=  1 )
         elif args.subparser_name == 'pull':    DisplayWallpaper( offset= -1 )
+        elif args.subparser_name == 'ls':      Archive().print_archives()
 
         elif args.subparser_name == 'display':
             self._parse_display( args )
