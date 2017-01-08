@@ -174,6 +174,9 @@ class WallpaperArchiveBase(object):
         if not archive_name:
             archive_name = self._determine_archive()
 
+        if 'archives' not in config:
+            print( config )
+            raise RuntimeError('config has no section "archives": "%s"' % self.configfile )
 
         if archive_name in config['archives']:
             self._test_archiveexists( config, archive_name )
@@ -844,76 +847,31 @@ class DataFile(WallpaperArchiveBase):
 
 
 class Archive(WallpaperArchiveBase):
-    def __init__(self, archive_name=None, append=None, push=None, pull=None, remove=None, delete=None, noconfirm=False):
+    def __init__(self):
+        self._archive_name = None
 
-        super( Archive, self ).__init__()
+        WallpaperArchiveBase.__init__(self)
 
-        ## Arguments
-        self.archive_name = archive_name
-        self.append       = append
-        self.remove       = remove
-        self.delete       = delete
-        self.noconfirm    = noconfirm
-        self.push         = push
-        self.pull         = pull
-
-        ## Attributes
-        self._validate_args()
-
-        ## START!!
-        self.main()
-
-    def _validate_args(self):
-        archive_name = self.archive_name
-        append       = self.append
-        remove       = self.remove
-        delete       = self.delete
-        push         = self.push
-        pull         = self.pull
-        noconfirm    = self.noconfirm
-
-        if append != None and not hasattr( append, '__iter__'):
-            raise TypeError('append argument should be in the form of a list of paths to append to the archive')
-
-        if remove != None and not hasattr( remove, '__iter__'):
-            raise TypeError('remove argument should be in the form of a list of paths to append to the archive')
-
-        if delete != None and not hasattr( delete, '__iter__'):
-            raise TypeError('delete argument should be in the form of a list of paths to append to the archive')
-
-        if noconfirm not in (True,False):
-            raise TypeError('noconfirm can only be True or False')
-
-    def main(self):
+    def _main(self):
         self.get_userconfig()
         self.get_saveddata()
-        self.get_archive( self.archive_name )
 
+    def append(self, archive_name, filepaths ):
+        """
+        Append images to an archive of wallpapers.
+        """
 
-        if self.append:
-            self.do_append()
+        self.get_userconfig()
+        self.get_archive( archive_name )
 
-        elif self.push:
-            self.git_operation('push')
-
-        elif self.pull:
-            self.git_operation('pull')
-
-        else:
-            logger.error('Unfinished other arguments')
-
-
-    def do_append(self):
-        archive_name = self.archive_name
+        data         = self.get_saveddata()
         archive_path = self.archive_path
-        append       = self.append
-        data         = self.data
 
-        if not append:
-            logger.error('No files designated to append')
+        if not filepaths:
+            logger.error('No files designated to filepaths')
             sys.exit(1)
 
-        archive_data = data['archives'][ archive_name ]
+        archive_data = data['archives'][ archive_path ]
 
 
         ## if gitroot/gitsource, make sure we have the latest version
@@ -937,7 +895,7 @@ class Archive(WallpaperArchiveBase):
         logger.info('appending files to archive: "%s"' % archive_path )
         with tarfile.open( archive_path, 'a' ) as archive:
 
-            for filepath in append:
+            for filepath in filepaths:
                 if os.path.basename(filepath) not in archive_files:
                     logger.info('   adding "%s"' % filepath )
                     archive.add( filepath, arcname=os.path.basename(filepath) )
@@ -950,16 +908,23 @@ class Archive(WallpaperArchiveBase):
         if has_items( archive_data, ('gitroot','gitsource') ):
             gitoperations.Git().git_commitpush( archive_data['gitroot'] )
 
-    def git_operation(self, operation):
+    def remove(self, archive_name):
         """
-        Performs a git operation.
+        Delete an archive
+        """
+        pass
+
+    def git_operation(self, archive_name, operation):
+        """
+        Performs a git operation. (push/pull)
         ___________________________________________________________
         INPUT:
         ___________________________________________________________
         operation | 'push','pull' | | the git operation to perform.
         """
 
-        git_info = gitoperations.Git().git_configured( self.data, self.archive_name )
+        self.get_archive( archive_name )
+        git_info = gitoperations.Git().git_configured( self.data, archive_name )
         if git_info['configured']:
 
             if operation == 'push':
@@ -968,7 +933,25 @@ class Archive(WallpaperArchiveBase):
             elif operation == 'pull':
                 gitoperations.Git().git_pull( git_info['gitroot'] )
 
+    def print_archives(self):
+        """
+        list all configured archives, and their locations
+        """
 
+        self.get_userconfig()
+
+        if 'archives' not in self.config:
+            print('no archives configured in : "%s"' % self.configfile )
+            return
+
+        print('')
+        print(' Archive Name       Description' )
+        print('===============    =============' )
+        for archive_name in self.config['archives']:
+            info = {'name':archive_name}
+            info.update(self.config['archives'][archive_name])
+            print( '{name:<15} -  {desc}'.format(**info) )
+        print('')
 
 
 
@@ -1058,6 +1041,10 @@ class CLI_Interface():
     def subparser_archive(self):
         parser = self.subparsers.add_parser( 'archive', help="Manage archives containing wallpapers (append,create,delete,...)\n (see `wallmgr archive --help`)" )
 
+        parser.add_argument(
+            '-l','--list-archives', help='List all archives, and their descriptions',
+            action='store_true',
+        )
 
         parser.add_argument(
             '-an', '--archive_name', help='Manually set the archive to display wallpapers from',
@@ -1172,16 +1159,24 @@ class CLI_Interface():
 
         if args.append!=None or args.push!=None or args.pull!=None:
 
-            if  args.append:
-                Archive(
+            if args.list_archives:
+                Archive().print_archives()
+
+            elif  args.append:
+                Archive().append(
                     archive_name = args.archive_name,
-                    append       = args.append,
+                    filepaths    = args.append,
                 )
 
             elif args.push:
-                Archive(
+                Archive().git_operation(
                     archive_name = args.archive_name,
-                    append       = args.append,
+                    operation    = 'push',
+                )
+            elif args.pull:
+                Archive().git_operation(
+                    archive_name = args.archive_name,
+                    operation    = 'pull',
                 )
 
 
