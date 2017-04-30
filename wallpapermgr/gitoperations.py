@@ -124,16 +124,24 @@ class Git(object):
         repo    = git.Repo( gitroot )
         remote  = repo.remote()
 
-        staged_files = repo.index.diff()
-        staged_files.extend( repo.untracked_files )
+        staged_files = set([ item.a_path for item in repo.index.diff(None) ])
+        staged_files.update( set(repo.untracked_files) )
 
 
         if not remote.exists():
             logger.error("gitsource url unavailable. Abandoning: %s" % remote.url)
             sys.exit(1)
         if repo.is_dirty():
+            logger.info('adding staged files to git: %s' % staged_files )
+
+            if not staged_files:
+                logger.info('no files are currently staged. aborting')
+                return
+
             repo.index.add( staged_files )
+            logger.info('committing changes..')
             repo.index.commit( uuid.uuid4().hex )
+            logger.info('pushing to branch "master"..')
             remote.push('master')
         else:
             logger.info('git repo is not dirty, nothing to push')
