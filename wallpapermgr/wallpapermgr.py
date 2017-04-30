@@ -141,7 +141,7 @@ class WallpaperArchiveBase(object):
 
         config      = filedata.ConfigFileIO( self.configfile ).read()
         self.config = config
-
+        return self
 
     def get_saveddata(self):
         """
@@ -149,9 +149,10 @@ class WallpaperArchiveBase(object):
         (just enough that rest of program can run without crashing, )
         (or hundreds of conditional statements)
         """
-        datafile = self.datafile
+        datafile  = self.datafile
+        self.data = filedata.DataFileIO(self.datafile).read()
 
-        return filedata.DataFileIO(self.datafile).read()
+        return self.data
 
 
     def get_archive(self, archive_name=None):
@@ -175,7 +176,6 @@ class WallpaperArchiveBase(object):
             archive_name = self._determine_archive()
 
         if 'archives' not in config:
-            print( config )
             raise RuntimeError('config has no section "archives": "%s"' % self.configfile )
 
         if archive_name in config['archives']:
@@ -783,6 +783,7 @@ class WallpaperDaemon(object):
         pass
 
 
+
 class DataFile(WallpaperArchiveBase):
     def __init__(self, shuffle=False, recreate_datafile=False ):
         super( DataFile, self ).__init__()
@@ -908,7 +909,7 @@ class Archive(WallpaperArchiveBase):
             gitoperations.Git().git_commitpush( archive_data['gitroot'] )
 
         ## add all the new files to the datafile
-        get_wallsequence( reload_tarfiles=True )
+        self.get_wallsequence( reload_tarfiles=True )
 
 
     def remove(self, archive_name):
@@ -926,8 +927,10 @@ class Archive(WallpaperArchiveBase):
         operation | 'push','pull' | | the git operation to perform.
         """
 
+        self.get_userconfig()
+        self.get_saveddata()
         self.get_archive( archive_name )
-        git_info = gitoperations.Git().git_configured( self.data, archive_name )
+        git_info = gitoperations.Git().git_configured( self.config, self.data, archive_name )
         if git_info['configured']:
 
             if operation == 'push':

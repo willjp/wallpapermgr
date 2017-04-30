@@ -8,15 +8,22 @@ ________________________________________________________________________________
 Description :   git operations used by wallpapermgr
 ________________________________________________________________________________
 """
-## Builtin
-from __future__  import unicode_literals
-from __future__  import absolute_import
+#builtin
+from   __future__  import unicode_literals
+from   __future__  import absolute_import
+import uuid
+import logging
+#external
+import git
+
+logger = logging.getLogger(__name__)
+
 
 class Git(object):
     def __init__(self):
         pass
 
-    def git_configured(self,data,archive_name):
+    def git_configured(self, config, data, archive_name):
         """
         _____________________________________________________________
         OUTPUT:
@@ -36,7 +43,7 @@ class Git(object):
                         'gitsource':'http://....'
                     }
         """
-        archive_info = data['archives'][ archive_name ]
+        archive_info = config['archives'][ archive_name ]
         archive_path = archive_info['archive']
 
         try:
@@ -126,9 +133,10 @@ class Git(object):
             sys.exit(1)
         if repo.is_dirty():
             repo.index.add( staged_files )
-            repo.index.commit()
+            repo.index.commit( uuid.uuid4().hex )
             remote.push('master')
-
+        else:
+            logger.info('git repo is not dirty, nothing to push')
 
 
 if __name__ == '__main__':
