@@ -6,10 +6,12 @@ import sys
 import re
 import shutil
 
+_PKGNAME = 'wallpapermgr'
+
 def get_pkginfo():
     cwd     = os.path.realpath(__file__).replace('\\','/')
     pkgpath = os.path.dirname( cwd ).replace('\\','/')
-    pkgname = cwd.split('/')[-2]
+    pkgname = _PKGNAME
     if '-' in pkgname:
         pkgname = '-'.join( pkgname.split('-')[:-1] )
     return (pkgpath,pkgname)
