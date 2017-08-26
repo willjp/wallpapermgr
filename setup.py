@@ -71,7 +71,8 @@ setup(
                             'six',
                             'GitPython',
                             'daemon',
-                            'supercli>=0.0.a2'
+                            'supercli>=0.0.a2',
+                            'python-xlib',
                         ],
     packages         = setuptools.find_packages( exclude=['tests*','images*'] ),
     py_modules       = ['wallpapermgr'],

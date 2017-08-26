@@ -28,10 +28,10 @@ try:
     import Xlib.display
 except( ImportError ):
     if sys.version_info[0] == 2:
-        cmd = 'pip2 install python2-xlib'
+        cmd = 'pip2 install python-xlib'
     else:
         cmd = 'pip install python-xlib'
-    print( 'Requires python2-xlib. Install with command:\n' + cmd )
+    print( 'Requires python-xlib. Install with command:\n' + cmd )
     sys.exit(1)
 
 
