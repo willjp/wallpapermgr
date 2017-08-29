@@ -1,0 +1,102 @@
+\# vim: ft=groff
+.TH WALLMGR 1 "28 August 2017"
+.SH NAME
+\#======
+wallmgr /- Extendable rule-based Management/Display of Wallpaper Collections.
+
+.SH SYNOPSIS
+\#==========
+
+\fBwallmgr  \fI[-h | --help] [-v|verbose] [-vv|--very-verbose]\fR
+
+.in +3
+next, prev, pull, push, shuffle
+
+archive\fI
+[-a|--append] [-an|--archive-name] [--pull] [--push]\fR
+
+data\fI
+[--recreate-datafile] [-s|--shuffle-order]\fR
+
+display\fI
+[-an|--archive-name] [-d|--daemonize] [-i|--index N] [-n|--next] [-p|--previous] [-o|--offset]\fR
+
+.SH DESCRIPTION
+\#=============
+
+A rule-based configurable, extendable tool to display/manage wallpapers. Wallpaper
+collections are stored in \fItar-archives\fR, and synchronized between computers
+using \fIgit\fR. It is managed using the configfile 
+\fI~/.config/wallpapermgr/config.yml\fR, which determines the archive of wallpapers,
+and the apply-method to use. The system was designed to share one config
+across multiple workstations/operating-systems.
+
+
+.SH FILES
+\#=======
+
+.TP
+\fB~/.config/wallpapermgr/config.yml\fR
+pairs conditions with a wallpaper-archive, git-repo, and display-method.
+
+.TP
+\fB~/.config/wallpapermgr/data.json\fR
+stores archive-locations, display-order, and last-displayed wallpaper
+for each wallpaper-archive.
+
+.SH EXAMPLES
+\#==========
+
+.TP
+\fBwallmgr next 
+\fRdisplay next wallpaper
+.TP
+\fBwallmgr display -an "widescreen"
+\fRignore conditions, and display wallpapers from archive
+named 'widescreen' in \fI~/.config/wallpapermgr/config.yml\fR
+.TP
+\fBwallmgr display --daemonize 
+\fRrun in background periodically changing wallpaper
+.TP
+\fBwallmgr data --shuffle-order
+\fRshuffle the order of wallpapers in the datafile.
+
+.SH CONFIGURATION
+\#===============
+
+.SS ~/.config/wallpapermgr/config.yml
+
+.vS
+``` 
+
+general:
+  conditions_path: null
+
+archives:
+  collection-name:
+     apply_method: feh
+     archive:      ~/progs/misc/wallpapers/normal_walls.tar
+     gitroot:      ~/progs/misc/wallpapers
+     gitsource:    ssh://gitbox:/home/gitrepos/misc/wallpapers
+     desc:         "wallpapers with an aspect ratio of 16:9"
+     conditions:
+       is_default: True
+
+```
+.vE
+
+.TP
+general
+configuration for all wallpaper-collections.
+.TP
+
+
+
+.SH SEE ALSO
+\#==========
+
+.SH AUTHOR
+\#========
+Will Pittman \- willjpittman@gmail.com
+
+
