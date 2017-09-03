@@ -23,10 +23,18 @@ logger = logging.getLogger(__name__)
 
 
 class DataFileIO(object):
-    def __init__(self,datafile):
+    """
+    Object that represents the JSON datafile ``~/.config/wallpapermgr/data.json``
+    that contains.
+
+        * archive-path
+        * last-displayed image
+        * wallpapers in archive
+
+    """
+    def __init__(self, datafile):
         self.datafile = datafile
         self.data     = None ## contents of the datafile
-
 
     def read(self):
         """
@@ -104,6 +112,7 @@ class DataFileIO(object):
         return data
 
 
+
 class ConfigFileIO(object):
     def __init__(self,configfile):
         self.configfile = configfile
@@ -157,3 +166,5 @@ class ConfigFileIO(object):
 
 
 
+if __name__ == '__main__':
+    pass
