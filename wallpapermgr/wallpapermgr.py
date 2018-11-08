@@ -136,7 +136,7 @@ class WallpaperArchiveBase(object):
         """
         Reads user's configfile, stores in self.config
         """
-
+        logger.debug('reading configfile: {}'.format(self.configfile))
         config = filedata.ConfigFileIO(self.configfile).read()
         self.config = config
         return self
@@ -540,7 +540,7 @@ class DisplayWallpaper(WallpaperArchiveBase):
     def main(self):
         self._validate_args()
 
-        self.get_userconfig()
+        config = self.get_userconfig()
         self.get_archive(self.archive_name)
         self.get_wallsequence()
         self.display_wallpaper()
