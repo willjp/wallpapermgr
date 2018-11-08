@@ -8,24 +8,22 @@ ________________________________________________________________________________
 Description :   A collection of tools for working with... collections...
 ________________________________________________________________________________
 """
-from   __future__    import unicode_literals
+from __future__ import unicode_literals
 
 
-def has_items( collection, items ):
+def has_items(collection, items):
     """
     Returns True if 'collection' contains all of the items in the list 'items'
     """
 
-    ## Validation
-    if not hasattr( collection, '__iter__' ):
+    # Validation
+    if not hasattr(collection, '__iter__'):
         raise TypeError('collection must be iterable: %s' % repr(collection))
 
-    if not hasattr( items, '__iter__' ):
+    if not hasattr(items, '__iter__'):
         raise TypeError('items must be iterable: %s' % repr(items))
 
-
-
-    ## Check
+    # Check
     satisfied_items = []
 
     for item in items:
@@ -38,8 +36,3 @@ def has_items( collection, items ):
         return True
 
     return False
-
-
-
-
-

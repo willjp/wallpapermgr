@@ -24,6 +24,11 @@ Unpublished to Pypy
 * append now reloads the datafile that stores the archive's conts
 * added ability to print all archives with descriptions
 
+0.0.a5
+-------
+* some pep8 corrections
+* using `/usr/bin/env python` instead of `/usr/bin/env python2` in shebang.
+
 TODO:
    * ???
 
