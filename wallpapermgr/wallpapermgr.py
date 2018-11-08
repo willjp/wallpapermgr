@@ -83,33 +83,34 @@ logger = logging.getLogger(__name__)
 ##
 
 class WallpaperArchiveBase(object):
+    """ Represents configfile, datafile (wallpapers available/order),
+
+    Class to be used as base for all major functions of wallpapermgr.
+    Provides standardized methods/attrs for interacting with:
+
+        * user config (archives, locations, display-methods, ...)
+        * stored data (sequence-order, last-file)
+    """
     __metaclass__ = ABCMeta
 
     def __init__(self):
-        """
-        Class to be used as base for all major functions of wallpapermgr.
-        Provides standardized methods/attrs for interacting with:
-
-            * user config (archives, locations, display-methods, ...)
-            * stored data (sequence-order, last-file)
-        """
 
         # Configuration/Data
 
         data_dir = DATA_DIR.format(**os.environ)
-        self.datafile = '{data_dir}/data.json'.format(**loc())
-
-        self.lib_configfile = '{data_dir}/config.yml'.format(**loc())
-        self.user_configfile = os.path.dirname(
-            os.path.realpath(__file__)) + '/config.yml'
+        self.datafile = '{}/data.json'.format(data_dir)
+        self.lib_configfile = '{}/config.yml'.format(data_dir)
+        self.user_configfile = '{}/config.yml'.format(
+            os.path.dirname(os.path.realpath(__file__))
+        )
         self.configfile = None  # location of used configfile (user or default)
         self.config = {}  # contents of configfile
-        self.data = {}  # stored archive-data from json file.
+        self.data = {}    # stored archive-data from json file.
 
         # Attributes
         self.archive_name = None  # name of archive we are retrieving wallpapers from
         self.archive_path = None  # path/filename of chosen tar-archive containing wallpapers
-        self.archive_info = {}  # dict of information for the selected archive
+        self.archive_info = {}    # dict of information for the selected archive
         # list of files in tar-archive in the order they will be displayed.
         self.wall_sequence = []
         # index of the last file displayed (in self.wall_sequence)
@@ -205,11 +206,13 @@ class WallpaperArchiveBase(object):
             else:
                 gitsource = archive_info['gitsource']
                 gitroot = archive_info['gitroot']
-                if self.confirm((
-                        'Archive is not present, clone from configured gitroot?\n'
-                        'gitroot:   "%s" \n'
-                        'gitsource: "%s" \n'
-                ) % (gitroot, gitsource)
+                if self.confirm(
+                    (
+                        'Archive is not present, clone from configured gitroot? \n'
+                        '(WARNING: this will fail if gitroot is a pre-exisiting git-submodule)\n'
+                        'gitroot:   "{}" \n'
+                        'gitsource: "{}" \n'
+                    ).format(gitroot, gitsource)
                 ):
                     gitoperations.Git().git_clone(gitsource, gitroot)
 
@@ -521,6 +524,8 @@ class WallpaperArchiveBase(object):
 
 
 class DisplayWallpaper(WallpaperArchiveBase):
+    """ This class is responsible for handling the finding/extracting/displaying a wallpaper.
+    """
     def __init__(self, archive_name=None, index=None, offset=None):
         super(DisplayWallpaper, self).__init__()
 
@@ -743,6 +748,10 @@ class DisplayWallpaper(WallpaperArchiveBase):
 
 
 class WallpaperDaemon(object):
+    """ Class representing a daemon, which runs in the background and periodically changes wallpapers.
+
+    .. warning:: does not appear to be used...
+    """
     def __init__(self, socket):
         self._socket = socket
 
@@ -768,47 +777,15 @@ class WallpaperDaemon(object):
 
 
 class DataFile(WallpaperArchiveBase):
-    def __init__(self, shuffle=False, recreate_datafile=False):
-        super(DataFile, self).__init__()
+    """ Represents ``~/.config/wallpapermgr/data.json`` which stores the order
+    that wallpapers will be presented.
 
-        # Arguments
-        self.shuffle = shuffle
-        self.recreate_datafile = recreate_datafile
-
-        # START!!
-        self.main()
-
-    def main(self):
-        self._validate_args()
-
-        shuffle = self.shuffle
-        recreate_datafile = self.recreate_datafile
-
-        if shuffle:
-            self.do_shuffle()
-        elif recreate_datafile:
-            self.do_recreate_datafile()
-
-    def _validate_args(self):
-        shuffle = self.shuffle
-        recreate_datafile = self.recreate_datafile
-
-        if not shuffle and not recreate_datafile:
-            raise TypeError('DataFile() received no arguments')
-
-        if shuffle not in (True, False):
-            raise TypeError(
-                "Expected True/False value for argument 'shuffle'. Received '%'" % shuffle)
-
-        if recreate_datafile not in (True, False):
-            raise TypeError(
-                "Expected True/False value for argument 'recreate_datafile'. Received '%'" % recreate_datafile)
-
-    def do_shuffle(self):
+    .. warning::  Does not appear to be used...
+    """
+    def shuffle(self):
+        """ Re-Randomizes the order of the wallpapers.
         """
-        Re-Randomizes the order of the wallpapers.
-        """
-        datafile = self.datafile
+        # datafile = self.datafile
         data = self.get_saveddata()
 
         for archive_path in data['archives']:
@@ -817,13 +794,19 @@ class DataFile(WallpaperArchiveBase):
             last = data['archives'][archive_path]['sequence'][-1]
             total = len(data['archives'][archive_path]['sequence'])
             logger.info(
-                '"{archive_path}":   first: {first} last: {last} total: {total}'.format(**loc()))
+                '"{archive_path}":   first: {first} last: {last} total: {total}'.format(
+                    archive_path=archive_path,
+                    first=first,
+                    last=last,
+                    total=total,
+                )
+            )
 
         with open(self.datafile, 'w') as fw:
             fw.write(json.dumps(data, indent=2))
 
-    def do_recreate_datafile(self):
-        logger.info('deleting file: %s' % self.datafile)
+    def recreate_datafile(self):
+        logger.info('deleting file: "{}"' % self.datafile)
         if os.path.isfile(self.datafile):
             os.remove(self.datafile)
 

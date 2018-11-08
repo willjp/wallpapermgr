@@ -2,6 +2,10 @@
 wallpapermgr
 ============
 
+.. warning::
+    This is some pretty horrendous code. The idea is fine, and I am still using it, 
+    but it needs a serious rewrite.
+
 |
 
 A simple, configurable tool to manage, categorize, and display
