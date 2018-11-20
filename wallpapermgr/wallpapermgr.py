@@ -46,7 +46,7 @@ import tarfile
 import socket
 
 # personal
-from .collectiontools import has_items
+from . import collectiontools
 from . import excepts
 from . import filedata
 from . import gitoperations
@@ -196,7 +196,7 @@ class WallpaperArchiveBase(object):
         if not os.path.isfile(archive_path):
 
             # If archive doesn't exist (and no gitconfig), warn user and exit
-            if not has_items(archive_info, ('gitroot', 'gitsource')):
+            if not collectiontools.has_items(archive_info, ('gitroot', 'gitsource')):
                 logger.error('archive path does not exist: "%s"' %
                              archive_info['archive'])
                 sys.exit(1)
@@ -844,7 +844,7 @@ class Archive(WallpaperArchiveBase):
         # if gitroot/gitsource, make sure we have the latest version
         # before adding to the archive.
         archive_files = []
-        if has_items(archive_data, ('gitroot', 'gitsource')):
+        if collectiontools.has_items(archive_data, ('gitroot', 'gitsource')):
             gitoperations.Git().git_pull(archive_data['gitroot'])
 
         # get a list of existing files
@@ -868,7 +868,7 @@ class Archive(WallpaperArchiveBase):
                     logger.info('   exists "%s"' % filepath)
 
         # if the user has configured a gitroot/gitsource - also add,commit,and push archive.
-        if has_items(archive_data, ('gitroot', 'gitsource')):
+        if collectiontools.has_items(archive_data, ('gitroot', 'gitsource')):
             gitoperations.Git().git_commitpush(archive_data['gitroot'])
 
         # add all the new files to the datafile
