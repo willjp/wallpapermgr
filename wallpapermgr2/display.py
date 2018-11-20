@@ -2,12 +2,13 @@
 # builtin
 from __future__ import absolute_import, division, print_function
 import logging
-import multiprocessing
+import subprocess
 import os
 import socket
 import socketserver
 import threading
 import time
+import sys
 # external
 import xdg.BaseDirectory
 # internal
@@ -36,6 +37,15 @@ def show(index):
 class RequestHandler(socketserver.BaseRequestHandler):
     """ SocketServer RequestHandler, parses/executes commands.
     """
+    @property
+    def command_map(self):
+        return dict(
+            next=dict(handler=self._handle_next, desc='show next wallpaper'),
+            prev=dict(handler=self._handle_prev, desc='show prev wallpaper'),
+            stop=dict(handler=self._handle_stop, desc='stop wallpaper daemon'),
+            help=dict(handler=self._handle_help, desc='print help message'),
+        )
+
     def handle(self):
         rawdata = self.request.recv(1024)
         if not rawdata:
@@ -46,17 +56,12 @@ class RequestHandler(socketserver.BaseRequestHandler):
         self._run_command(data)
 
     def _run_command(self, command):
-        command_map = {
-            'next': self._handle_next,
-            'prev': self._handle_prev,
-            'stop': self._handle_stop,
-        }
-        if command not in command_map:
+        if command not in self.command_map:
             msg = 'invalid command: "{}"'.format(command)
             self.request.send(msg.encode())
             return
 
-        command_map[command]()
+        self.command_map[command]['handler']()
 
     def _handle_next(self):
         self.request.send(b'display next')
@@ -68,6 +73,17 @@ class RequestHandler(socketserver.BaseRequestHandler):
         self.request.send(b'shutting down server..')
         t = threading.Thread(target=self.server.shutdown)
         t.start()
+
+    def _handle_help(self):
+        reply = [
+            '',
+            'available commands:',
+            '===================',
+        ]
+        for cmd in self.command_map:
+            reply.append('  {}:  {}'.format(cmd, self.command_map[cmd]['desc']))
+
+        self.request.send('\n'.join(reply).encode() + b'\n\n')
 
 
 class Server(socketserver.UnixStreamServer):
@@ -85,6 +101,10 @@ class Server(socketserver.UnixStreamServer):
             self.serve_forever()
 
     def server_bind(self):
+        # islink, isfile both fail
+        if os.path.exists(self.sockfile):
+            os.unlink(self.sockfile)
+
         self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.socket.bind(self.sockfile)
 
@@ -101,12 +121,18 @@ class Server(socketserver.UnixStreamServer):
 
     @classmethod
     def request(cls, request):
-        # NOTE: kick-starting the daemon like this is not working.
+        """ Send a command to the wallpapermgr Server.
+        """
         pidfile = datafile.PidFile()
         if not pidfile.is_active():
-            process = multiprocessing.Process(target=Server, args=(True,))
-            process.daemon = True
-            process.start()
+            cmds = [sys.executable, '-c']
+            pycmds = (
+                'from wallpapermgr2 import display',
+                'srv=display.Server()',
+                'srv.serve_forever()',
+            )
+            cmds.append(';'.join(pycmds))
+            subprocess.Popen(cmds, stdin=None, stdout=None, stderr=None)
 
         # request
         sock = None
@@ -117,7 +143,7 @@ class Server(socketserver.UnixStreamServer):
                 sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
                 sock.connect(cls.sockfile)
                 break
-            except(FileNotFoundError):
+            except(FileNotFoundError, ConnectionRefusedError):
                 tries -= 1
                 time.sleep(0.5)
 
@@ -132,7 +158,8 @@ class Server(socketserver.UnixStreamServer):
 
 
 if __name__ == '__main__':
-    #server = Server()
-    #server.serve_forever()
+    # server = Server()
+    # server.serve_forever()
 
-    Server.request(b'next')
+    reply = Server.request(b'next')
+    print(reply)
