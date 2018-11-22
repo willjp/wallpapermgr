@@ -2,7 +2,7 @@
 wallpapermgr
 ============
 
-Configurable tool to synchornize/display wallpapers between computers.
+Configurable tool to display/synchronize wallpapers between computers.
 
 Wallpapers are grouped into tar archives. files are synchronized between
 computers using git. You may define your own command that determines which
@@ -20,7 +20,7 @@ Usage
     wallmgr ls                      # print configured archives
     wallmgr prev/next               # show previous/next wallpaper
     wallmgr reload                  # reload config/re-index archive contents
-    wallmgr archive <archive_name>  # use wallpapers from archive
+    wallmgr archive <archive_name>  # use wallpapers from different archive
 
 
     # add/remove wallpapers from an archive
