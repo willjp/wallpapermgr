@@ -2,11 +2,24 @@
 # builtin
 # external
 import setuptools
+import os
 # internal
 import wallpapermgr2
 
 
 __version__ = wallpapermgr2.__version__
+
+
+def get_zsh_completionpath():
+    paths = (
+        '/usr/local/share/zsh/functions/Completion/Unix',
+        '/usr/share/zsh/functions/Completion/Unix',
+    )
+    for path in paths:
+        if os.path.isdir(path):
+            return path
+    raise RuntimeError(
+        'No fpath could be found for installation in: %s' % repr(paths))
 
 
 setuptools.setup(
@@ -22,7 +35,9 @@ setuptools.setup(
             'wallmgr = wallpapermgr2.cli:CommandlineInterface.show',
         ]
     },
-    # TODO: zsh completer
+    data_files=[
+        (get_zsh_completionpath(), ['data/autocomplete.zsh/_wallmgr']),
+    ],
     # TODO: man-page
     install_requires=[
         'GitPython',
