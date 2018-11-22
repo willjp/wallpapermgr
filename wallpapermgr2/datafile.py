@@ -279,7 +279,7 @@ class Archive(object):
                     'git project present'
                 )
 
-    def add(self, filepaths):
+    def add(self, filepaths, commit=True, push=True):
         self._validate_modifyable()
 
         # confirm all files exist
@@ -292,7 +292,13 @@ class Archive(object):
             for filepath in filepaths:
                 archive_fd.add(filepath, os.path.basename(filepath))
 
-    def remove(self, filepaths):
+        # commit/push
+        if commit:
+            self.commit('add', [os.path.basename(x) for x in filepaths])
+        if push:
+            self.push()
+
+    def remove(self, filepaths, commit=True, push=True):
         self._validate_modifyable()
 
         raise NotImplementedError(
@@ -379,6 +385,24 @@ class Archive(object):
                 'git source does not exist: {}'.format(self.gitsource)
             )
         remote.push()
+
+    def commit(self, operation, filepaths):
+        """ performs a git commit, recording the operation
+        and the files it affects.
+        """
+        self._validate_loaded()
+        repo = git.Repo(self.gitroot)
+
+        if not repo.is_dirty(untracked_files=True):
+            return
+
+        # add all changes
+        repo.git.add(update=True)
+        repo.git.commit(
+            '-m',
+            '{} {}'.format(operation, repr(filepaths)),
+            author='wallpapermgr@domain.com'
+        )
 
 
 class Data(object):
