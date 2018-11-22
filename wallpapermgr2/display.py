@@ -61,6 +61,12 @@ def stop():
     Server.request('stop')
 
 
+def change_interval(seconds):
+    """ If set to a value above 0, a new wallpaper will be displayed every N `seconds` . (WIP)
+    """
+    Server.request('interval {}'.format(seconds))
+
+
 class RequestHandler(socketserver.BaseRequestHandler):
     """ SocketServer RequestHandler, parses/executes commands.
     """
@@ -74,6 +80,10 @@ class RequestHandler(socketserver.BaseRequestHandler):
             prev=dict(
                 handler=self._handle_prev,
                 desc='show prev wallpaper'
+            ),
+            interval=dict(
+                handler=self._handle_interval,
+                desc='show wallpaper every N seconds',
             ),
             archive=dict(
                 handler=self._handle_archive,
@@ -136,6 +146,11 @@ class RequestHandler(socketserver.BaseRequestHandler):
 
         self._display(archive, index)
 
+    def _handle_interval(self, seconds):
+        self.server.set_change_interval(float(seconds))
+        msg = 'setting display interval to {}s'.format(seconds)
+        self.request.send(msg.encode())
+
     def _handle_archive(self, archive):
         self.server.set_archive(archive)
         msg = 'switching to archive {}'.format(archive)
@@ -182,6 +197,8 @@ class Server(socketserver.UnixStreamServer):
         super(Server, self).__init__(self.sockfile, RequestHandler)
         self.__config = datafile.Config()
         self.__data = datafile.Data()
+        self.__change_interval = 0  # change ever N seconds
+        self.__change_time = time.time()
 
         self.reload()
 
@@ -305,11 +322,17 @@ class Server(socketserver.UnixStreamServer):
         self.__archive = archive
         self.__index = index
         self.data.set_index(archive, index)
+        self.__change_interval = time.time()
 
     def set_archive(self, archive):
         data = self.data.read()
         index = data['archives'][archive]['last_index']
         self.display(archive, index)
+
+    def set_change_interval(self, seconds):
+        if seconds < 0:
+            seconds = 0
+        self.__change_interval = seconds
 
 
 if __name__ == '__main__':

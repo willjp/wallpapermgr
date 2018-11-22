@@ -26,9 +26,12 @@
   - configurable cli-command to display wallpaper (simpler)
   - updated zsh autocomplete (manually)
   - git submodule support
+  - manpage
 
 
 # TODO: change wallpaper at interval
+#        will need something rnning in sep thread. the whole point of socketserver is
+#        not needing to constantly re-read socket... need something else.
 # TODO: tests!!!
 # TODO: work out kinks in starting without repo, or archive, etc.
 # TODO: manpage
