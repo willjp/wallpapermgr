@@ -2,11 +2,12 @@
 # builtin
 from __future__ import absolute_import, division, print_function
 import functools
-import os
-import subprocess
-import random
-import tarfile
 import json
+import os
+import random
+import string
+import subprocess
+import tarfile
 # external
 from six.moves import input
 import xdg.BaseDirectory
@@ -159,13 +160,19 @@ class Config(object):
 
     def validate(self, data):
         validate.dictkeys(
-            'data', data, reqd_keys=set(['archives', 'choose_archive_cmd'])
+            'data', data, reqd_keys=set([
+                'archives', 'choose_archive_cmd', 'show_wallpaper_cmd'
+            ])
         )
 
         # validate choose_archive
         if not isinstance(data['choose_archive_cmd'], list):
             raise TypeError(
                 'expected data["choose_archive_cmd"] to be a list.'
+            )
+        if not isinstance(data['show_wallpaper_cmd'], list):
+            raise TypeError(
+                'expected data["show_wallpaper_cmd"] to be a list.'
             )
 
         # validate archives
@@ -210,6 +217,33 @@ class Config(object):
             raise RuntimeError('archive "{}" does not exist'.format(archive))
 
         return archive
+
+    def show_wallpaper_cmd(self, wallpaper):
+        """ Adds the wallpaper into user-provided show-wallpaper command.
+
+        Args:
+            wallpaper (str): ``(ex: '/path/to/wallpaper.png')``
+                path to a wallpaper you'd like to display
+
+        Returns:
+            list:
+                The configured ``show_wallpaper_cmd`` with the
+                wallpaper substituted in.
+
+                .. code-block:: python
+
+                    ['feh', '--bg-scale', '/path/to/wallpaper.png']
+
+        """
+        data = self.read()
+        out_cmds = []
+
+        for arg in data['show_wallpaper_cmd']:
+            t = string.Template(arg)
+            out_cmds.append(
+                t.safe_substitute({'wallpaper': wallpaper})
+            )
+        return out_cmds
 
     def archives(self):
         data = self.read()

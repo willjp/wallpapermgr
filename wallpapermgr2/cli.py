@@ -44,6 +44,9 @@ class CommandlineInterface(object):
         self.subparsers.add_parser(
             'reload', help='Reload/Shuffle order of items in archives',
         )
+        self.subparsers.add_parser(
+            'stop', help='Request shutdown of the wallpaper-server',
+        )
 
     def _build_subparser_archive(self):
         parser = self.subparsers.add_parser(
@@ -82,6 +85,7 @@ class CommandlineInterface(object):
             'prev': display.prev,
             'reload': display.reload,
             'ls': datafile.print_archive_list,
+            'stop': display.stop,
         }
 
         if subparser in subparser_map:

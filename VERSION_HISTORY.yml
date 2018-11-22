@@ -24,10 +24,10 @@
   - simplified commandline interface
   - configurable cli-command to determine archive (simpler, faster)
   - configurable cli-command to display wallpaper (simpler)
+  - updated zsh autocomplete (manually)
   - git submodule support
 
+# TODO: tests!!!
 # TODO: wallpaper apply should be configurable
 # TODO: work out kinks in starting without repo, or archive, etc.
-# TODO: tests!!!
 # TODO: manpage/install
-# TODO: zsh autocompleter/install

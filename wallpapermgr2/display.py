@@ -55,6 +55,12 @@ def reload():
         Server.request('reload')
 
 
+def stop():
+    """ Request shutdown of the wallpapermgr server.
+    """
+    Server.request('stop')
+
+
 class RequestHandler(socketserver.BaseRequestHandler):
     """ SocketServer RequestHandler, parses/executes commands.
     """
@@ -293,7 +299,7 @@ class Server(socketserver.UnixStreamServer):
 
         # display wallpaper
         subprocess.check_call(
-            ['feh', '--bg-scale', extracted_path],
+            self.config.show_wallpaper_cmd(extracted_path),
             stdin=None, stdout=None, stderr=None
         )
         self.__archive = archive

@@ -5,7 +5,7 @@ _wallmgr() {
     local -a subcmds                             
 
 
-    subcmds=( next prev ls reload archive  ) 
+    subcmds=( next prev ls reload stop archive  ) 
 
     _arguments -C                              \
         {-h,--help}'[show help information]'   \
@@ -35,6 +35,12 @@ _wallmgr() {
             {-vv,--very-verbose}'[Same as verbose, but all log-filters are disabled.  (All information is printed)]'\
             ;;
     (reload)                             
+        _arguments -A "-*"                \
+            {-h,--help}'[show this help message and exit]'\
+            {-v,--verbose}'[Prints more detailed log-information ([31m`logging.DEBUG`[39;49;00m)]'\
+            {-vv,--very-verbose}'[Same as verbose, but all log-filters are disabled.  (All information is printed)]'\
+            ;;
+    (stop)                             
         _arguments -A "-*"                \
             {-h,--help}'[show this help message and exit]'\
             {-v,--verbose}'[Prints more detailed log-information ([31m`logging.DEBUG`[39;49;00m)]'\
