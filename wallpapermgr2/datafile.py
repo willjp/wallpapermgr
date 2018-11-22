@@ -182,21 +182,18 @@ class Config(object):
                 'data["archives"]["{}"]'.format(name),
                 archive,
                 reqd_keys=(
-                    'apply_method',
                     'archive',
                     'gitroot',
                     'gitsource',
                     'desc',
                 ),
                 types={
-                    'apply_method': text_types,
                     'archive':      text_types,
                     'gitroot':      [type(None)] + list(text_types),
                     'gitsource':    [type(None)] + list(text_types),
                     'desc':         text_types,
                 },
                 validators={
-                    'apply_method': self._validate_apply_method,
                     'archive': functools.partial(_validate_abspath, 'archive'),
                     'gitroot': functools.partial(_validate_abspath, 'gitroot'),
                 }
@@ -222,9 +219,6 @@ class Config(object):
         data = self.read()
         path = data['archives'][archive]['archive']
         return os.path.expanduser(path)
-
-    def _validate_apply_method(self, applymethod):
-        pass
 
 
 class Archive(object):
