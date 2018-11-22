@@ -22,6 +22,15 @@ text_types = (bytes, str)
 
 class PidFile(object):
     """ ContextManager that writes current processid to a pidfile.
+
+    Example:
+
+        pidfiles contan a single line with a pid.
+        No newlines.
+
+        ::
+            5431
+
     """
     def __init__(self, filepath=None):
         if filepath is None:
@@ -220,6 +229,8 @@ class Config(object):
 
 class Archive(object):
     """ Object representing a tar-archive of wallpapers in a git repo.
+
+    Archives contain a flat list of image files. No directories/subdirectories.
     """
     def __init__(self, archive, config=None):
         """ Constructor.
@@ -227,6 +238,9 @@ class Archive(object):
         Args:
             archive (str): ``(ex: 'wide_wallpapers')``
                 name of archive (in config).
+
+            config (wallpapermgr2.datafile.Config, optional):
+                You may reuse a config, if you already have one instantiated.
         """
         if config is None:
             config = Config()
@@ -330,15 +344,14 @@ class Archive(object):
 
         return self.clone()
 
-        # confirm all files exist
-        for filepath in filepaths:
-            if not os.path.isfile(filepath):
-                raise RuntimeError('no such file: "{}"'.format(filepath))
-
-        # write to archive
-        with tarfile.open(self.filepath, 'a') as archive_fd:
-            for filepath in filepaths:
-                archive_fd.add(filepath, os.path.basename(filepath))
+    def is_submodule(self):
+        # check if submodule
+        parentdir = os.path.dirname(self.gitroot)
+        try:
+            repo = git.Repo(parentdir, search_parent_directories=True)
+            return repo
+        except(git.InvalidGitRepositoryError):
+            return False
 
     def clone(self):
         self._validate_loaded()
@@ -347,9 +360,20 @@ class Archive(object):
         if os.path.exists('{}/.git'.format(self.gitroot)):
             return True
 
-        repo = git.Repo.init(self.gitroot)
-        repo.create_remote('origin', self.gitsource)
-        return self.pull()
+        # git submodule update --init
+        parent_repo = self.is_submodule()
+        if parent_repo:
+            parent_gitroot = os.path.dirname(parent_repo.git_dir)
+            submodule_path = self.gitsource[len(parent_gitroot) + 1:]
+            submodule = parent_repo.submodule(submodule_path)
+            submodule.update(init=True)
+            return True
+
+        # git clone
+        else:
+            repo = git.Repo.init(self.gitroot)
+            repo.create_remote('origin', self.gitsource)
+            return self.pull()
 
     def pull(self):
         self._validate_loaded()
@@ -407,8 +431,43 @@ class Archive(object):
 
 class Data(object):
     """ Object representing the wallpapermgr datafile (wallpaper order).
+
+    Example:
+
+        .. code-block:: python
+
+            {
+                "archives": {
+                    "normal_walls": {
+                        "last_index": 0,
+                        "sequence": [
+                            "wallhaven-474183.png",
+                            "wallhaven-258640.jpg",
+                            "wallhaven-185456.png",
+                            ...
+                        ]
+                    },
+                    "wide_walls": {
+                        "last_index": 23,
+                        "sequence": [
+                            "wallhaven-185466.png",
+                            "oscarthegrouch.jpg",
+                            "wallhaven-134328.jpg"
+                            ...
+                        ]
+                    }
+                }
+            }
+
     """
     def __init__(self, filepath=None):
+        """ Constructor.
+
+        Args:
+            filepath (str, optional):
+                If provided, you may use a non-default datafile.
+                Otherwise one will be instantiated for you.
+        """
         if filepath is None:
             filedir = xdg.BaseDirectory.save_data_path('wallpapermgr')
             filepath = '{}/data.json'.format(filedir)
@@ -418,9 +477,16 @@ class Data(object):
 
     @property
     def filepath(self):
+        """ Returns filepath to this datafile.
+        """
         return self.__filepath
 
     def read(self, force=False):
+        """ Read the datafile.
+
+        Returns:
+            dict: datafile contents. See object example.
+        """
         if self.data and not force:
             return self.data
 
@@ -437,6 +503,8 @@ class Data(object):
         return self.data
 
     def write(self, data=None):
+        """ Replace the contents of datatfile with `data` .
+        """
         if data is None:
             data = self.read()
 
@@ -446,6 +514,8 @@ class Data(object):
         self.data = data
 
     def validate(self, data):
+        """ Validate the contents of a datafile.
+        """
         validate.dictkeys('data', data, reqd_keys=set(['archives']))
 
         for name in data['archives']:
@@ -457,7 +527,8 @@ class Data(object):
             )
 
     def index(self, archive):
-        """
+        """ Returns value of `last_index` in archive.
+
         Args:
             archive (str):  ``(ex: 'wide_wallpapers')``
                 name of archive
@@ -473,14 +544,21 @@ class Data(object):
         return data['archives'][archive]['last_index']
 
     def set_index(self, archive, index):
+        """ Updates `last_index` key for this archive in the datafile.
+        """
         data = self.read()
-        self.data['archives'][archive]['last_index'] = index
+        data['archives'][archive]['last_index'] = index
+        self.data = data
 
     def wallpaper(self, archive, index):
+        """ Returns the path to wallpaper at `index` in archive.
+        """
         data = self.read()
         return data['archives'][archive]['sequence'][index]
 
     def archive_len(self, archive):
+        """ Returns number of images contained within an archive.
+        """
         data = self.read()
 
         if archive not in data['archives']:
@@ -541,6 +619,8 @@ class Data(object):
 
 
 def print_archive_list(config=None):
+    """ Prints all configured archives, descriptions, and paths.
+    """
     if config is None:
         config = Config()
 
