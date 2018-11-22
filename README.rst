@@ -2,7 +2,7 @@
 wallpapermgr
 ============
 
-Configurable tool to display/synchronize wallpapers between computers.
+Configurable tool to manage display/synchronization of wallpapers between computers.
 
 Wallpapers are grouped into tar archives. files are synchronized between
 computers using git. You may define your own command that determines which
