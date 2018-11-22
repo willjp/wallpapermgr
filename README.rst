@@ -20,6 +20,7 @@ Usage
     wallmgr ls                      # print configured archives
     wallmgr prev/next               # show previous/next wallpaper
     wallmgr reload                  # reload config/re-index archive contents
+    wallmgr stop                    # stop the wallpaper server
     wallmgr archive <archive_name>  # use wallpapers from different archive
 
 
