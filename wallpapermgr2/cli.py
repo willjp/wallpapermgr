@@ -123,7 +123,11 @@ class CommandlineInterface(object):
         elif args.push:
             archive.push()
 
+    @staticmethod
+    def show():
+        cli = CommandlineInterface()
+        cli.parse_args()
+
 
 if __name__ == '__main__':
-    cli = CommandlineInterface()
-    cli.parse_args()
+    CommandlineInterface.show()
