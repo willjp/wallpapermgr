@@ -4,10 +4,10 @@
 import setuptools
 import os
 # internal
-import wallpapermgr2
+import wallpapermgr
 
 
-__version__ = wallpapermgr2.__version__
+__version__ = wallpapermgr.__version__
 
 
 def get_man_path():
@@ -42,7 +42,7 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     entry_points={
         'console_scripts': [
-            'wallmgr = wallpapermgr2.cli:CommandlineInterface.show',
+            'wallmgr = wallpapermgr.cli:CommandlineInterface.show',
         ]
     },
     data_files=[

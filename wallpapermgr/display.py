@@ -14,7 +14,7 @@ import glob
 # external
 import xdg.BaseDirectory
 # internal
-from wallpapermgr2 import datafile
+from wallpapermgr import datafile
 
 
 logger = logging.getLogger(__name__)
@@ -231,7 +231,7 @@ class Server(socketserver.UnixStreamServer):
         if not pidfile.is_active():
             cmds = [sys.executable, '-c']
             pycmds = (
-                'from wallpapermgr2 import display',
+                'from wallpapermgr import display',
                 'srv=display.Server()',
                 'srv.serve_forever()',
             )

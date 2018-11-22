@@ -15,7 +15,7 @@ import six
 import yaml
 import git
 # internal
-from wallpapermgr2 import validate
+from wallpapermgr import validate
 
 
 text_types = (bytes, str)
@@ -267,7 +267,7 @@ class Archive(object):
             archive (str): ``(ex: 'wide_wallpapers')``
                 name of archive (in config).
 
-            config (wallpapermgr2.datafile.Config, optional):
+            config (wallpapermgr.datafile.Config, optional):
                 You may reuse a config, if you already have one instantiated.
         """
         if config is None:

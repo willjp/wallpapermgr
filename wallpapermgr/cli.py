@@ -5,7 +5,7 @@ import supercli.argparse
 import sys
 # external
 # internal
-from wallpapermgr2 import display, datafile
+from wallpapermgr import display, datafile
 
 
 class CommandlineInterface(object):
