@@ -24,15 +24,13 @@ Usage
 
 
     # add/remove wallpapers from an archive
-    wallmgr \
-      archive <archive_name> \
-      --add/--remove file1.png file2.png
+    wallmgr archive <archive_name> \
+        --add/--remove file1.png file2.png
 
 
     # git push/pull an archive's git-repository (to sync)
-    wallmgr \
-      archive <archive_name> \
-      --push/--pull
+    wallmgr archive <archive_name> \
+        --push/--pull
 
 
 Install
