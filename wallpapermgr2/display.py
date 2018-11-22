@@ -21,15 +21,38 @@ logger = logging.getLogger(__name__)
 
 
 def change_archive(archive_name):
+    """ Set archive that wallpapers are being displayed from,
+    starting server if not running.
+    """
     Server.request('archive {}'.format(archive_name))
 
 
 def next():
+    """ Show next wallpaper within current archive,
+    starting server if not running.
+    """
     Server.request('next')
 
 
 def prev():
+    """ Show previous wallpaper within current archive,
+    starting server if not running.
+    """
     Server.request('prev')
+
+
+def reload():
+    """ Re-reads each archive, shuffles order,
+    and if server is already running, reloads data within server.
+
+    .. note::
+        does *not* start server if not already running.
+
+    """
+    data = datafile.Data()
+    data.reload_archive()
+    if Server.is_active():
+        Server.request('reload')
 
 
 class RequestHandler(socketserver.BaseRequestHandler):
@@ -172,6 +195,11 @@ class Server(socketserver.UnixStreamServer):
     def current_index(self):
         return self.__index
 
+    @staticmethod
+    def is_active():
+        pidfile = datafile.PidFile()
+        return pidfile.is_active()
+
     @classmethod
     def request(cls, request):
         """ Send a command to the wallpapermgr Server.
@@ -192,7 +220,7 @@ class Server(socketserver.UnixStreamServer):
         tries = 6
         while tries > 0:
             try:
-                sanitized_request = request
+                sanitized_request = request.encode()
                 sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
                 sock.connect(cls.sockfile)
                 break

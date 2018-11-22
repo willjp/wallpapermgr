@@ -203,6 +203,10 @@ class Config(object):
 
         return archive
 
+    def archives(self):
+        data = self.read()
+        return sorted(list(data['archives'].keys()))
+
     def archive_path(self, archive):
         data = self.read()
         path = data['archives'][archive]['archive']
@@ -345,3 +349,33 @@ class Data(object):
         self.validate(data)
         self.write(data)
         self.data = data
+
+
+def print_archive_list(config=None):
+    if config is None:
+        config = Config()
+
+    printlines = ['']
+    data = config.read()
+    fmt = '{name:>15} {sep}  {desc:<70}   {path}'
+
+    for header in (
+        dict(name='Archive Name', sep=' ', desc='Description', path='Location'),
+        dict(name='============', sep=' ', desc='===========', path='========'),
+    ):
+        printlines.append(fmt.format(**header))
+
+    if 'archives' in data:
+        for archive in data['archives']:
+            archive_data = data['archives'][archive]
+            line_data = dict(
+                name=archive,
+                sep='-',
+                desc=archive_data['desc'],
+                path=archive_data['archive'],
+            )
+            printlines.append(fmt.format(**line_data))
+    printlines.append('')
+
+    print('\n'.join(printlines))
+
