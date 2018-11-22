@@ -51,7 +51,13 @@ It uses the following format:
 
 .. code-block:: yaml
 
-    choose_archive_cmd: ['echo', 'normal_walls']      # stdout of this SHELL command determines archive to use by default
+    # stdout of this SHELL command determines archive to use by default
+    choose_archive_cmd: ['echo', 'normal_walls']
+
+    # the command to display a wallpaper.
+    # ${wallpaper} will be substituted with the path of 
+    # the wallpaper to display everywhere it appears.
+    show_wallpaper_cmd: ['feh', '--bg-scale', '${wallpaper}']
     
     archives:
        normal_walls:
@@ -65,7 +71,4 @@ It uses the following format:
           gitroot:      ~/progs/misc/wallpapers
           gitsource:    ssh://gitbox:/home/gitrepos/misc/wallpapers
           desc:         "wallpapers for wide-multimonitor aspect ratios (ex: 32:9, 48:9)"
-
-
-**NOTE: currently hardcoded to display wallpaper using feh. must fix.**
 

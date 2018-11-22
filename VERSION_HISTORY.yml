@@ -28,6 +28,5 @@
   - git submodule support
 
 # TODO: tests!!!
-# TODO: wallpaper apply should be configurable
 # TODO: work out kinks in starting without repo, or archive, etc.
-# TODO: manpage/install
+# TODO: manpage
