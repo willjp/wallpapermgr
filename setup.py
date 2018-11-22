@@ -10,6 +10,16 @@ import wallpapermgr2
 __version__ = wallpapermgr2.__version__
 
 
+def get_man_path():
+    paths = ('/usr/man/man1',)
+    for path in paths:
+        if os.path.isdir(path):
+            return path
+    raise RuntimeError(
+        'Unable to determine manpath'
+    )
+
+
 def get_zsh_completionpath():
     paths = (
         '/usr/local/share/zsh/functions/Completion/Unix',
@@ -37,8 +47,8 @@ setuptools.setup(
     },
     data_files=[
         (get_zsh_completionpath(), ['data/autocomplete.zsh/_wallmgr']),
+        (get_man_path(), ['data/man/wallmgr.1']),
     ],
-    # TODO: man-page
     install_requires=[
         'GitPython',
         'PyYaml',
