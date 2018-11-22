@@ -8,9 +8,11 @@ import random
 import tarfile
 import json
 # external
+from six.moves import input
 import xdg.BaseDirectory
 import six
 import yaml
+import git
 # internal
 from wallpapermgr2 import validate
 
@@ -214,6 +216,169 @@ class Config(object):
 
     def _validate_apply_method(self, applymethod):
         pass
+
+
+class Archive(object):
+    """ Object representing a tar-archive of wallpapers in a git repo.
+    """
+    def __init__(self, archive, config=None):
+        """ Constructor.
+
+        Args:
+            archive (str): ``(ex: 'wide_wallpapers')``
+                name of archive (in config).
+        """
+        if config is None:
+            config = Config()
+
+        self.__config = config
+        if archive:
+            self.load(archive)
+
+    @property
+    def config(self):
+        return self.__config
+
+    @property
+    def filepath(self):
+        return self.__filepath
+
+    @property
+    def gitroot(self):
+        return self.__gitroot
+
+    @property
+    def gitsource(self):
+        return self.__gitsource
+
+    def load(self, archive):
+        data = self.config.read()
+        if archive not in data['archives']:
+            raise RuntimeError(
+                'no archive exists in config with name "{}"'.format(archive)
+            )
+
+        self.__filepath = os.path.expanduser(data['archives'][archive]['archive'])
+        self.__gitroot = os.path.expanduser(data['archives'][archive]['gitroot'])
+        self.__gitsource = os.path.expanduser(data['archives'][archive]['gitsource'])
+
+    def _validate_loaded(self):
+        if any([not x for x in (self.filepath, self.gitroot, self.gitsource)]):
+            raise RuntimeError(
+                'this archive obj has not been loaded with an archive'
+            )
+
+    def _validate_modifyable(self):
+        self._validate_loaded()
+
+        # if repo not exists, want to to clone? otherwise reject
+        if not os.path.exists('{}/.git'.format(self.gitroot)):
+            if not self.request_clone():
+                raise RuntimeError(
+                    'Aborted - will not modify archive without '
+                    'git project present'
+                )
+
+    def add(self, filepaths):
+        self._validate_modifyable()
+
+        # confirm all files exist
+        for filepath in filepaths:
+            if not os.path.isfile(filepath):
+                raise RuntimeError('no such file: "{}"'.format(filepath))
+
+        # write to archive
+        with tarfile.open(self.filepath, 'a') as archive_fd:
+            for filepath in filepaths:
+                archive_fd.add(filepath, os.path.basename(filepath))
+
+    def remove(self, filepaths):
+        self._validate_modifyable()
+
+        raise NotImplementedError(
+            'todo - will need to extract all, '
+            'create new archive, '
+            'then replace orig'
+        )
+
+    def request_clone(self):
+        """
+        Returns:
+            bool: whether clone was performed/successful.
+        """
+        self._validate_loaded()
+
+        # dir if repo, file if submodule
+        if os.path.exists('{}/.git'.format(self.gitroot)):
+            return True
+
+        while True:
+            reply = input(
+                'archive repo does not exist on disk, '
+                'would you like to clone it? (y/n)'
+            ).lower()
+            if reply in ('y', 'n'):
+                break
+        if reply != 'y':
+            return False
+
+        return self.clone()
+
+        # confirm all files exist
+        for filepath in filepaths:
+            if not os.path.isfile(filepath):
+                raise RuntimeError('no such file: "{}"'.format(filepath))
+
+        # write to archive
+        with tarfile.open(self.filepath, 'a') as archive_fd:
+            for filepath in filepaths:
+                archive_fd.add(filepath, os.path.basename(filepath))
+
+    def clone(self):
+        self._validate_loaded()
+
+        # dir if repo, file if submodule
+        if os.path.exists('{}/.git'.format(self.gitroot)):
+            return True
+
+        repo = git.Repo.init(self.gitroot)
+        repo.create_remote('origin', self.gitsource)
+        return self.pull()
+
+    def pull(self):
+        self._validate_loaded()
+
+        # if not exist, ask if wants to clone
+        if not os.path.exists('{}/.git'.format(self.gitroot)):
+            return self.request_clone()
+
+        repo = git.Repo(self.gitroot)
+        if repo.is_dirty(untracked_files=True):
+            raise RuntimeError(
+                (
+                    'cannot git-pull, '
+                    'repo contains untracked-files/changes: '
+                    '"{}"'
+                ).format(self.gitroot)
+            )
+
+        remote = repo.remote()
+        if not remote.exists():
+            raise RuntimeError(
+                'git source does not exist: {}'.format(self.gitsource)
+            )
+        remote.pull('master')
+        return True
+
+    def push(self):
+        self._validate_loaded()
+        repo = git.Repo(self.gitroot)
+        remote = repo.remote()
+        if not remote.exists():
+            raise RuntimeError(
+                'git source does not exist: {}'.format(self.gitsource)
+            )
+        remote.push()
 
 
 class Data(object):

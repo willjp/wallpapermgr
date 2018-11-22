@@ -228,7 +228,7 @@ class CommandlineInterface2(object):
             nargs='*',
         )
         parser.add_argument(
-            '--pull', help='Git Pull an archive',
+            '--pull', help='Git Pull an archive. (clones if not present)',
             action='store_true',
         )
         parser.add_argument(
@@ -267,23 +267,25 @@ class CommandlineInterface2(object):
             display.change_archive(args.archive)
             return
 
+        archive = datafile.Archive(args.archive)
+
         # add/remove
         if args.add and args.remove:
             print('cannot use --add and --remove together')
             sys.exit(1)
         elif args.add:
-            raise NotImplementedError('todo')
+            archive.add(args.add)
         elif args.remove:
-            raise NotImplementedError('todo')
+            archive.remove(args.remove)
 
         # pull/push
         if args.pull and args.push:
             print('cannot use --pull and --push together')
             sys.exit(1)
         elif args.pull:
-            raise NotImplementedError('todo')
+            archive.pull()
         elif args.push:
-            raise NotImplementedError('todo')
+            archive.push()
 
 
 if __name__ == '__main__':
