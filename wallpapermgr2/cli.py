@@ -155,7 +155,7 @@ class CommandlineInterface(object):
 
         if subparser == 'display':
             if args.archive_name:
-                display.set_archive(args.archive_name)
+                display.change_archive(args.archive_name)
 
             if args.next:
                 display.next()
@@ -264,7 +264,7 @@ class CommandlineInterface2(object):
         # change archive
         all_args = (args.add, args.remove, args.pull, args.push)
         if len([x for x in all_args if x]) == 0:
-            display.set_archive(args.archive)
+            display.change_archive(args.archive)
             return
 
         # add/remove
