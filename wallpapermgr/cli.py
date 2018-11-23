@@ -28,7 +28,7 @@ class CommandlineInterface(object):
 
         self.parser.add_argument(
             '-i', '--interval', help='override number of seconds between wallpaper changes',
-            type=numbers.Number,
+            #type=numbers.Number,
         )
         self.parser.add_argument(
             '-v', '--verbose', help='enable verbose logging',
@@ -108,7 +108,19 @@ class CommandlineInterface(object):
             datefmt='%Y/%m/%d %H:%M',
         )
 
-        # common args
+        # if no args, start server
+        if not subparser:
+            if not display.Server.is_active():
+                print('starting wallpapermgr server')
+                srv = display.Server(interval=args.interval)
+                srv.serve_forever()
+                return
+            elif args.interval:
+                if subparser != display.RequestHandler.stop_command:
+                    display.Server.request('interval {}'.format(args.interval))
+                return
+
+        # interact-with server
         subparser_map = {
             'next': display.next,
             'prev': display.prev,
@@ -123,17 +135,6 @@ class CommandlineInterface(object):
 
         elif subparser == 'archive':
             self._parse_subparser_archive(args)
-
-        else:
-            print('starting wallpapermgr server')
-            srv = display.Server(interval=args.interval)
-            srv.serve_forever()
-            return
-
-        # argument handling
-        if args.interval:
-            if subparser != display.RequestHandler.stop_command:
-                display.Server.request(interval=args.interval)
 
     def _parse_subparser_archive(self, args):
         # change archive

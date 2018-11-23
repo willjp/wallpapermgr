@@ -333,6 +333,10 @@ class Server(socketserver.UnixStreamServer):
         self.__archive = self.__config.determine_archive()
         self.__index = self.__data.index(self.__archive)
 
+        # reload server settings
+        data = self.__config.read()
+        self.__timer.set_interval(data.get('change_interval', None))
+
     def shutdown(self):
         logger.debug('requesting shutdown...')
         return super(Server, self).shutdown()
@@ -388,7 +392,7 @@ class Server(socketserver.UnixStreamServer):
                 self.config, self.data, archive, index
             )
         else:
-            threading.Thread(
+            t = threading.Thread(
                 target=extract_wallpaper,
                 kwargs=dict(
                     config=self.config,
@@ -398,21 +402,7 @@ class Server(socketserver.UnixStreamServer):
                     finished_callback=self._wallpaper_extracted,
                 ),
             )
-
-        #thread = _ExtractWallpaperWorker(
-        #    self.config,
-        #    self.data,
-        #    archive,
-        #    index,
-        #    finished_callback=self._wallpaper_extracted,
-        #)
-        #if wait:
-        #    result = thread.run()
-        #    if not result:
-        #        import ipdb; ipdb.set_trace()
-        #    return result
-        #else:
-        #    thread.start()
+            t.start()
 
     def _wallpaper_extracted(self, filepath):
         self.__last_extracted = filepath
@@ -495,59 +485,6 @@ class _ChangeWallpaperTimer(threading.Thread):
                 init = False
             else:
                 time.sleep(1)
-
-
-class _ExtractWallpaperWorker(threading.Thread):
-    def __init__(
-        self,
-        config,
-        data,
-        archive,
-        index,
-        finished_callback=None
-    ):
-        self.__config = config
-        self.__data = data
-        self.__archive = archive
-        self.__index = index
-        self.__finished_callback = finished_callback
-        self.__filepath = None
-
-        super(_ExtractWallpaperWorker, self).__init__()
-
-    @property
-    def config(self):
-        return self.__config
-
-    @property
-    def data(self):
-        return self.__data
-
-    @property
-    def filepath(self):
-        return self.__filepath
-
-    def run(self):
-        archive_path = self.config.archive_path(self.__archive)
-        with tarfile.open(archive_path, 'r') as archive_fd:
-            item_path = self.data.wallpaper(self.__archive, self.__index)
-            logger.debug('extracting archive/path:n{}({})'.format(
-                    self.__archive, item_path
-            ))
-            ext = os.path.splitext(item_path)[-1]
-            extracted_path = Server.wallpaperfile.format(ext=ext)
-            try:
-                fr = archive_fd.extractfile(item_path)
-                with open(extracted_path, 'wb') as fw:
-                    fw.write(fr.read())
-                self.__finished_callback(extracted_path)
-                return extracted_path
-            except:
-                self.__finished_callback(None)
-            finally:
-                if fr:
-                    fr.close()
-                self.__filepath = extracted_path
 
 
 def extract_wallpaper(
