@@ -284,10 +284,14 @@ class Server(socketserver.UnixStreamServer):
 
         sanitized_request = request.encode()
         sock.send(sanitized_request)
-        reply = sock.recv(1024)
-        sock.close()
-
-        return reply
+        try:
+            reply = sock.recv(1024)
+            sock.close()
+            return reply
+        except(Exception):
+            if str(request) != str(RequestHandler.stop_command):
+                return
+            raise
 
     def server_bind(self):
         # islink, isfile both fail
