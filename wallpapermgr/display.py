@@ -375,33 +375,6 @@ class Server(socketserver.UnixStreamServer):
         for old_wallpaper in glob.glob(self.wallpaperfile.format(ext='.*')):
             os.remove(old_wallpaper)
 
-    def _extract_wallpaper_1(self, archive, index):
-        """
-        Returns:
-            str: filepath to extracted wallpaper
-        """
-        self.__extract_in_progress = False
-        try:
-            archive_path = self.config.archive_path(archive)
-            with tarfile.open(archive_path, 'r') as archive_fd:
-                item_path = self.data.wallpaper(archive, index)
-                logger.debug('extracting archive/path:n{}({})'.format(
-                        archive_path, item_path
-                ))
-                ext = os.path.splitext(item_path)[-1]
-                extracted_path = self.wallpaperfile.format(ext=ext)
-                try:
-                    fr = archive_fd.extractfile(item_path)
-                    with open(extracted_path, 'wb') as fw:
-                        fw.write(fr.read())
-                finally:
-                    if fr:
-                        fr.close()
-        finally:
-            self.__extract_in_progress = False
-
-        return extracted_path
-
     def _extract_wallpaper(self, archive, index, wait=False):
         """
         Returns:
@@ -409,23 +382,47 @@ class Server(socketserver.UnixStreamServer):
         """
         self.__extract_in_progress = True
         self.__last_extracted = None
-        thread = _ExtractWallpaperWorker(
-            self.config,
-            self.data,
-            archive,
-            index,
-            finished_callback=self._wallpaper_extracted,
-        )
+
         if wait:
-            return thread.run()
+            return extract_wallpaper(
+                self.config, self.data, archive, index
+            )
         else:
-            thread.start()
+            threading.Thread(
+                target=extract_wallpaper,
+                kwargs=dict(
+                    config=self.config,
+                    data=self.data,
+                    archive=archive,
+                    index=index,
+                    finished_callback=self._wallpaper_extracted,
+                ),
+            )
+
+        #thread = _ExtractWallpaperWorker(
+        #    self.config,
+        #    self.data,
+        #    archive,
+        #    index,
+        #    finished_callback=self._wallpaper_extracted,
+        #)
+        #if wait:
+        #    result = thread.run()
+        #    if not result:
+        #        import ipdb; ipdb.set_trace()
+        #    return result
+        #else:
+        #    thread.start()
 
     def _wallpaper_extracted(self, filepath):
         self.__last_extracted = filepath
 
     def _display_wallpaper(self, filepath):
         logger.debug('displaying wallpaper: {}'.format(filepath))
+        if filepath is None:
+            raise RuntimeError(
+                '`filepath` could not be found. received "{}"'.format(filepath)
+            )
         subprocess.check_call(
             self.config.show_wallpaper_cmd(filepath),
             stdin=None, stdout=None, stderr=None
@@ -485,7 +482,7 @@ class _ChangeWallpaperTimer(threading.Thread):
             if not self.__interval > 0:
                 continue
 
-            if (time.time() + self.__interval) >= self.__time_changed:
+            if (time.time() - self.__time_changed) >= self.__interval:
                 next()
                 self.__lock.acquire()
                 self.__time_changed = time.time()
@@ -553,15 +550,53 @@ class _ExtractWallpaperWorker(threading.Thread):
                 self.__filepath = extracted_path
 
 
+def extract_wallpaper(
+        config,
+        data,
+        archive,
+        index,
+        finished_callback=None
+):
+    archive_path = config.archive_path(archive)
+    with tarfile.open(archive_path, 'r') as archive_fd:
+        item_path = data.wallpaper(archive, index)
+        logger.debug('extracting archive/path:n{}({})'.format(
+                archive, item_path
+        ))
+        ext = os.path.splitext(item_path)[-1]
+        extracted_path = Server.wallpaperfile.format(ext=ext)
+        try:
+            fr = archive_fd.extractfile(item_path)
+            if not fr:
+                raise RuntimeError(
+                    'unable to find "{}" within tarfile: "{}"'.format(
+                        item_path, archive_path
+                    )
+                )
+            with open(extracted_path, 'wb') as fw:
+                fw.write(fr.read())
+
+            if finished_callback:
+                finished_callback(extracted_path)
+
+            return extracted_path
+
+        finally:
+            if fr:
+                fr.close()
+
+    return extracted_path
+
+
 if __name__ == '__main__':
     # ==============
     # for debugging:
     # ==============
-    #server = Server()
-    #server.serve_forever()
+    server = Server()
+    server.serve_forever()
 
     # =======================================
     # starts daemon, AND shows next wallpaper
     # =======================================
-    reply = Server.request('next')
-    print(reply)
+    #reply = Server.request('next')
+    #print(reply)

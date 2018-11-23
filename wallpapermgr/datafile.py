@@ -649,7 +649,11 @@ class Data(object):
                 random.shuffle(contents)
                 data['archives'][archive] = {
                     'last_index': 0,
-                    'sequence': [p.replace('./', '') for p in contents],
+                    'sequence': [
+                        p.replace('./', '')
+                        for p in contents
+                        if p not in ('..', '.')
+                    ],
                 }
             return data
 
@@ -693,4 +697,5 @@ def print_archive_list(config=None):
     printlines.append('')
 
     print('\n'.join(printlines))
+
 
