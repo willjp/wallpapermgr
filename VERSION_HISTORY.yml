@@ -29,13 +29,11 @@
   - manpage
 
 1.1.a1:
-  - optionally changes wallpaper at regular intervals
+  - optionally changes wallpaper at regular intervals (timer running in separate thread)
   - removed supercli dependency
   - additional logging to asssist debugging
+  - extracts next wallpaper in advance in separate thread (so next can be instant)
 
-# TODO: change wallpaper at interval
-#        will need something rnning in sep thread. the whole point of socketserver is
-#        not needing to constantly re-read socket... need something else.
 # TODO: tests!!!
 # TODO: work out kinks in starting without repo, or archive, etc.
 # TODO: manpage
