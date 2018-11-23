@@ -1,16 +1,17 @@
 #!/usr/bin/env python
 # builtin
 from __future__ import absolute_import, division, print_function
+import glob
 import logging
-import subprocess
+import numbers
 import os
 import socket
 import socketserver
-import threading
-import time
+import subprocess
 import sys
 import tarfile
-import glob
+import threading
+import time
 # external
 import xdg.BaseDirectory
 # internal
@@ -70,38 +71,40 @@ def change_interval(seconds):
 class RequestHandler(socketserver.BaseRequestHandler):
     """ SocketServer RequestHandler, parses/executes commands.
     """
+    stop_command = 'stop'  # command that issues poison-pill to kill Server.
+
     @property
     def command_map(self):
-        return dict(
-            next=dict(
+        return {
+            'next': dict(
                 handler=self._handle_next,
                 desc='show next wallpaper'
             ),
-            prev=dict(
+            'prev': dict(
                 handler=self._handle_prev,
                 desc='show prev wallpaper'
             ),
-            interval=dict(
+            'interval': dict(
                 handler=self._handle_interval,
                 desc='show wallpaper every N seconds',
             ),
-            archive=dict(
+            'archive': dict(
                 handler=self._handle_archive,
                 desc='change archive wallpapers are loaded from.',
             ),
-            stop=dict(
+            self.stop_command: dict(
                 handler=self._handle_stop,
                 desc='stop wallpaper daemon'
             ),
-            reload=dict(
+            'reload': dict(
                 handler=self._handle_reload,
                 desc='reload from configfile/datafile'
             ),
-            help=dict(
+            'help': dict(
                 handler=self._handle_help,
                 desc='print help message'
             ),
-        )
+        }
 
     def handle(self):
         rawdata = self.request.recv(1024)
@@ -193,12 +196,21 @@ class Server(socketserver.UnixStreamServer):
         xdg.BaseDirectory.save_data_path('wallpapermgr')
     )
 
-    def __init__(self):
+    def __init__(self, interval=None):
+        """ constructor.
+
+        Args:
+            interval (numbers.Number, optional):
+                numer of seconds between wallpaper changes
+        """
         super(Server, self).__init__(self.sockfile, RequestHandler)
         self.__config = datafile.Config()
+
+        if interval is None:
+            interval = self.config.read().get('change_interval', None)
+
         self.__data = datafile.Data()
-        self.__change_interval = 0  # change ever N seconds
-        self.__change_time = time.time()
+        self.__timer = _ChangeWallpaperTimer(interval=interval)
 
         self.reload()
 
@@ -227,33 +239,48 @@ class Server(socketserver.UnixStreamServer):
     def request(cls, request):
         """ Send a command to the wallpapermgr Server.
         """
-        pidfile = datafile.PidFile()
-        if not pidfile.is_active():
-            cmds = [sys.executable, '-c']
-            pycmds = (
-                'from wallpapermgr import display',
-                'srv=display.Server()',
-                'srv.serve_forever()',
-            )
-            cmds.append(';'.join(pycmds))
-            subprocess.Popen(cmds, stdin=None, stdout=None, stderr=None)
+
+        logger.debug('received request: {}'.format(request))
+
+        # if server is not started, and attempting to stop, do nothing.
+        if str(request) == str(RequestHandler.stop_command):
+            if not Server.is_active():
+                return
+
+        # if not the 'stop' command, start the server before issuing command.
+        if str(request) != str(RequestHandler.stop_command):
+            pidfile = datafile.PidFile()
+            if not pidfile.is_active():
+                logger.debug('server not running, restarting...')
+                cmds = [sys.executable, '-c']
+                pycmds = (
+                    'from wallpapermgr import display',
+                    'srv=display.Server()',
+                    'srv.serve_forever()',
+                )
+                cmds.append(';'.join(pycmds))
+                subprocess.Popen(cmds, stdin=None, stdout=None, stderr=None)
 
         # request
         sock = None
         tries = 6
         while tries > 0:
             try:
-                sanitized_request = request.encode()
                 sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
                 sock.connect(cls.sockfile)
                 break
             except(FileNotFoundError, ConnectionRefusedError):
+                if tries != tries:
+                    logger.warning(
+                        'Unable to contact server - retrying in 0.5s'
+                    )
                 tries -= 1
                 time.sleep(0.5)
 
         if not sock:
             raise RuntimeError('unable to connect')
 
+        sanitized_request = request.encode()
         sock.send(sanitized_request)
         reply = sock.recv(1024)
         sock.close()
@@ -270,21 +297,37 @@ class Server(socketserver.UnixStreamServer):
 
     def serve_forever(self, poll_interval=0.5):
         try:
+            logger.info('starting wallpaper server...')
             pidfile = datafile.PidFile()
             pidfile.open()
+            self.__timer.start()
             return super(Server, self).serve_forever(poll_interval)
         finally:
-            pidfile.close()
+            logger.debug('shutdown initiated...')
+            self.__timer.shutdown()
             self.socket.shutdown(socket.SHUT_RDWR)
             self.socket.close()
+            logger.debug('socket shutdown..successful')
             os.unlink(self.sockfile)
             self.data.write()
+            logger.debug('data dump..successful')
+            if os.path.exists(self.sockfile):
+                os.unlink(self.sockfile)
+            self.__timer.join()
+            logger.debug('timer shutdown..successful')
+            pidfile.close()
+            logger.debug('pidfile close..successful')
 
     def reload(self):
+        logger.info('reloading wallpaper configs..')
         self.__config.read(force=True)
         self.__data.read(force=True)
         self.__archive = self.__config.determine_archive()
         self.__index = self.__data.index(self.__archive)
+
+    def shutdown(self):
+        logger.debug('requesting shutdown...')
+        return super(Server, self).shutdown()
 
     def display(self, archive, index):
         if index >= self.data.archive_len(archive):
@@ -305,6 +348,9 @@ class Server(socketserver.UnixStreamServer):
         archive_path = self.config.archive_path(archive)
         with tarfile.open(archive_path, 'r') as archive_fd:
             item_path = self.data.wallpaper(archive, index)
+            logger.debug('extracting archive/path:n{}({})'.format(
+                    archive_path, item_path
+            ))
             ext = os.path.splitext(item_path)[-1]
             extracted_path = self.wallpaperfile.format(ext=ext)
             try:
@@ -312,9 +358,11 @@ class Server(socketserver.UnixStreamServer):
                 with open(extracted_path, 'wb') as fw:
                     fw.write(fr.read())
             finally:
-                fr.close()
+                if fr:
+                    fr.close()
 
         # display wallpaper
+        logger.debug('displaying wallpaper: {}'.format(extracted_path))
         subprocess.check_call(
             self.config.show_wallpaper_cmd(extracted_path),
             stdin=None, stdout=None, stderr=None
@@ -330,20 +378,78 @@ class Server(socketserver.UnixStreamServer):
         self.display(archive, index)
 
     def set_change_interval(self, seconds):
-        if seconds < 0:
-            seconds = 0
-        self.__change_interval = seconds
+        self.__timer.set_interval(seconds)
+
+
+class _ChangeWallpaperTimer(threading.Thread):
+    """ Started by Server, periodically sends instructions to change wallpaper.
+    """
+    def __init__(self, interval=None):
+        if interval is None:
+            interval = 0
+
+        self.__interval = interval
+        self.__time_changed = time.time()
+        self.__lock = threading.RLock()
+        self.__request_stop = False
+
+        super(_ChangeWallpaperTimer, self).__init__()
+
+    def set_interval(self, interval):
+        self.__lock.acquire()
+        try:
+            if not isinstance(interval, numbers.Number):
+                raise TypeError('invalid interval: {}'.format(interval))
+            self.__interval = interval
+        finally:
+            self.__lock.release()
+
+    def reset(self):
+        self.__lock.acquire()
+        try:
+            self.__time_changed = time.time()
+        finally:
+            self.__lock.release()
+
+    def shutdown(self):
+        self.__lock.acquire()
+        try:
+            self.__request_stop = True
+        finally:
+            self.__lock.release()
+
+    def run(self):
+        init = True
+        while not self.__request_stop:
+            # interval of 0, -1 are ignored.
+            # (never change wallpaper automatically)
+            if not self.__interval > 0:
+                continue
+
+            if (time.time() + self.__interval) >= self.__time_changed:
+                next()
+                self.__lock.acquire()
+                self.__time_changed = time.time()
+                self.__lock.release()
+                init = False
+                continue
+
+            # only sleep if not first run
+            if init is True:
+                init = False
+            else:
+                time.sleep(1)
 
 
 if __name__ == '__main__':
     # ==============
     # for debugging:
     # ==============
-    server = Server()
-    server.serve_forever()
+    #server = Server()
+    #server.serve_forever()
 
     # =======================================
     # starts daemon, AND shows next wallpaper
     # =======================================
-    # reply = Server.request(b'next')
-    # print(reply)
+    reply = Server.request('next')
+    print(reply)

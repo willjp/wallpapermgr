@@ -1,17 +1,21 @@
 #!/usr/bin/env python
 # builtin
 from __future__ import absolute_import, division, print_function
-import supercli.argparse
+import argparse
+import logging
+import numbers
 import sys
 # external
 # internal
 from wallpapermgr import display, datafile
 
 
+logger = logging.getLogger(__name__)
+
+
 class CommandlineInterface(object):
     def __init__(self):
-        self.parser = supercli.argparse.ArgumentParser(
-            autocomp_cmd='wallmgr',
+        self.parser = argparse.ArgumentParser(
             description=(
                 'wallpapermgr is a modular program to manage/display collections of wallpapers. \n'
                 '\n'
@@ -21,6 +25,19 @@ class CommandlineInterface(object):
             )
         )
         self.subparsers = self.parser.add_subparsers(dest='subparser_name')
+
+        self.parser.add_argument(
+            '-i', '--interval', help='override number of seconds between wallpaper changes',
+            type=numbers.Number,
+        )
+        self.parser.add_argument(
+            '-v', '--verbose', help='enable verbose logging',
+            action='store_true',
+        )
+        self.parser.add_argument(
+            '-vv', '--very-verbose', help='enable very verbose logging',
+            action='store_true',
+        )
 
         self._build_args()
         self._build_subparser_archive()
@@ -79,6 +96,18 @@ class CommandlineInterface(object):
         args = self.parser.parse_args()
         subparser = args.subparser_name
 
+        loglvl = logging.WARNING
+        if args.verbose:
+            loglvl = logging.INFO
+        elif args.very_verbose:
+            loglvl = logging.DEBUG
+
+        logging.basicConfig(
+            level=loglvl,
+            format='%(asctime)s %(levelname)-10s - %(message)s',
+            datefmt='%Y/%m/%d %H:%M',
+        )
+
         # common args
         subparser_map = {
             'next': display.next,
@@ -88,17 +117,23 @@ class CommandlineInterface(object):
             'stop': display.stop,
         }
 
+        # subparser handling
         if subparser in subparser_map:
             subparser_map[subparser]()
-            return
 
         elif subparser == 'archive':
             self._parse_subparser_archive(args)
 
         else:
             print('starting wallpapermgr server')
-            srv = display.Server()
+            srv = display.Server(interval=args.interval)
             srv.serve_forever()
+            return
+
+        # argument handling
+        if args.interval:
+            if subparser != display.RequestHandler.stop_command:
+                display.Server.request(interval=args.interval)
 
     def _parse_subparser_archive(self, args):
         # change archive

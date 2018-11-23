@@ -59,6 +59,10 @@ It uses the following format:
     # ${wallpaper} will be substituted with the path of 
     # the wallpaper to display everywhere it appears.
     show_wallpaper_cmd: ['feh', '--bg-scale', '${wallpaper}']
+
+    # [optional] change wallpapers every N seconds
+    # (can also be set on commandline with -i/--interval)
+    change_interval: 30
     
     archives:
        normal_walls:

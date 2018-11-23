@@ -3,6 +3,7 @@
 from __future__ import absolute_import, division, print_function
 import functools
 import json
+import numbers
 import os
 import random
 import string
@@ -160,12 +161,16 @@ class Config(object):
 
     def validate(self, data):
         validate.dictkeys(
-            'data', data, reqd_keys=set([
-                'archives', 'choose_archive_cmd', 'show_wallpaper_cmd'
-            ])
+            'data', data,
+            reqd_keys={
+                'archives',
+                'choose_archive_cmd',
+                'show_wallpaper_cmd',
+            },
+            avail_keys={'change_interval', },
         )
 
-        # validate choose_archive
+        # validate top-level keys
         if not isinstance(data['choose_archive_cmd'], list):
             raise TypeError(
                 'expected data["choose_archive_cmd"] to be a list.'
@@ -174,6 +179,12 @@ class Config(object):
             raise TypeError(
                 'expected data["show_wallpaper_cmd"] to be a list.'
             )
+        if 'change_interval' in data:
+            if not isinstance(data['change_interval'], numbers.Number):
+                raise TypeError(
+                    ('expected data["change_interval"] to be a number.'
+                     'Received {}').format(data['change_interval'])
+                )
 
         # validate archives
         for name in data['archives']:
@@ -509,7 +520,7 @@ class Data(object):
         """
         return self.__filepath
 
-    def read(self, force=False):
+    def read(self, force=False, skip_validate=False):
         """ Read the datafile.
 
         Returns:
@@ -525,7 +536,8 @@ class Data(object):
                 if fileconts:
                     data = json.loads(fileconts)
 
-        self.validate(data)
+        if not skip_validate:
+            self.validate(data)
         self.data = data
 
         return self.data
@@ -553,6 +565,12 @@ class Data(object):
                 reqd_keys=('last_index', 'sequence'),
                 types={'last_index': int, 'sequence': list},
             )
+
+            for path in data['archives'][name]['sequence']:
+                if any([x in path for x in ('\\', '/')]):
+                    raise RuntimeError(
+                        'path must be filename only. Received "{}"'.format(path)
+                    )
 
     def index(self, archive):
         """ Returns value of `last_index` in archive.
@@ -621,7 +639,7 @@ class Data(object):
         if config is None:
             config = Config()
 
-        data = self.read()
+        data = self.read(skip_validate=True)
         cfgdata = config.read()
 
         def load_archive_contents(archive):
@@ -631,7 +649,7 @@ class Data(object):
                 random.shuffle(contents)
                 data['archives'][archive] = {
                     'last_index': 0,
-                    'sequence': contents,
+                    'sequence': [p.replace('./', '') for p in contents],
                 }
             return data
 

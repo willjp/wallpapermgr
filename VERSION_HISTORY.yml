@@ -28,6 +28,10 @@
   - git submodule support
   - manpage
 
+1.1.a1:
+  - optionally changes wallpaper at regular intervals
+  - removed supercli dependency
+  - additional logging to asssist debugging
 
 # TODO: change wallpaper at interval
 #        will need something rnning in sep thread. the whole point of socketserver is
