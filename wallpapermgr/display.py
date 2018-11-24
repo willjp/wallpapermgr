@@ -283,6 +283,7 @@ class Server(socketserver.UnixStreamServer):
         logger.info('reloading wallpaper configs..')
         self.__config.read(force=True)
         self.__data.read(force=True)
+        self.__data.reload_archive(config=self.__config)
         self.__archive = self.__config.determine_archive()
         self.__index = self.__data.index(self.__archive)
 
@@ -372,14 +373,19 @@ class Server(socketserver.UnixStreamServer):
         )
 
     def set_archive(self, archive):
+        data = self.data.read()
+        if archive not in data['archives']:
+            raise RuntimeError(
+                'No archive in config with name: "{}"'.format(archive)
+            )
+
         try:
-            data = self.data.read()
             index = data['archives'][archive]['last_index']
             self.display(archive, index)
         except(KeyError):
             raise RuntimeError(
                 (
-                    'unable to set archive to "{}". '
+                    'unable to set archive to "{}". \n'
                     'If config is correct and archive exists, '
                     'try ``wallmger archive {} --pull`` followed by ``wallmgr reload``.'
                 ).format(archive, archive)

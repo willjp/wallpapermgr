@@ -54,7 +54,6 @@ setuptools.setup(
         'PyYaml',
         'setuptools',
         'six',
-        'supercli>=0.0.a2',
     ],
     classifiers=[
         # windows not currently supported, using unix-domain-sockets

@@ -159,12 +159,13 @@ archives:
 .nf
 .ft C
 # basics
-wallmgr ls                      # print configured archives
-wallmgr prev/next               # show previous/next wallpaper
-wallmgr reload                  # reload config/re\-index archive contents
-wallmgr stop                    # stop the wallpaper server
-wallmgr archive <archive_name>  # use wallpapers from different archive
-
+wallmgr                               # start wallpaper server in current process
+wallmgr ls                            # print configured archives
+wallmgr prev/next                     # show previous/next wallpaper
+wallmgr reload                        # reload config/re\-index archive contents
+wallmgr stop                          # stop the wallpaper server
+wallmgr archive <archive_name>        # use wallpapers from different archive
+wallmgr archive <archive_name> -i 20  # use wallpapers from <archive>, change every 20s
 
 # add/remove wallpapers from an archive
 wallmgr archive <archive_name> \e

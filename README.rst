@@ -3,6 +3,7 @@ wallpapermgr
 ============
 
 Configurable tool to manage display/synchronization of wallpapers between computers.
+Designed to be used in minimal window-managers like dwm, i3, xmonad, etc.
 
 Wallpapers are grouped into tar archives. files are synchronized between
 computers using git. You may define your own command that determines which
@@ -17,6 +18,7 @@ Usage
 .. code-block:: bash
 
     # basics
+    wallmgr                         # start server in current process
     wallmgr ls                      # print configured archives
     wallmgr prev/next               # show previous/next wallpaper
     wallmgr reload                  # reload config/re-index archive contents
@@ -33,6 +35,10 @@ Usage
     wallmgr archive <archive_name> \
         --push/--pull
 
+
+    # modify interval
+    wallmgr -i 20                    # change wallpaper every 20s
+    wallmgr archive <archive> -i 30  # use archive <archive>, and change wallpaper every 30s
 
 Install
 .......
@@ -65,13 +71,13 @@ It uses the following format:
     change_interval: 30
     
     archives:
-       normal_walls:
+       normal:
           archive:      ~/progs/misc/wallpapers/normal_walls.tar
           gitroot:      ~/progs/misc/wallpapers
           gitsource:    ssh://gitbox:/home/gitrepos/misc/wallpapers
           desc:         "wallpapers with a normal aspect ratio (ex: 16:9)"
     
-       wide_walls:
+       wide:
           archive:      ~/progs/misc/wallpapers/wide_walls.tar
           gitroot:      ~/progs/misc/wallpapers
           gitsource:    ssh://gitbox:/home/gitrepos/misc/wallpapers

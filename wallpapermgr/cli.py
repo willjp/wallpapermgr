@@ -27,7 +27,8 @@ class CommandlineInterface(object):
         self.subparsers = self.parser.add_subparsers(dest='subparser_name')
 
         self.parser.add_argument(
-            '-i', '--interval', help='override number of seconds between wallpaper changes',
+            '-i', '--interval',
+            help='override number of seconds between wallpaper changes',
             #type=numbers.Number,
         )
         self.parser.add_argument(
@@ -74,6 +75,10 @@ class CommandlineInterface(object):
                 'The target archive. If used alone, sets archive '
                 'wallpapers are read from'
             ),
+        )
+        parser.add_argument(
+            '-i', '--interval',
+            help='override number of seconds between wallpaper changes',
         )
         parser.add_argument(
             '--add', help='Add images to an archive',
@@ -141,6 +146,8 @@ class CommandlineInterface(object):
         all_args = (args.add, args.remove, args.pull, args.push)
         if len([x for x in all_args if x]) == 0:
             display.Server.request('archive {}'.format(args.archive))
+            if args.interval:
+                display.Server.request('interval {}'.format(args.interval))
             return
 
         archive = datafile.Archive(args.archive)
