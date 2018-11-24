@@ -389,7 +389,7 @@ class Archive(object):
         try:
             repo = git.Repo(parentdir, search_parent_directories=True)
             return repo
-        except(git.InvalidGitRepositoryError):
+        except(git.InvalidGitRepositoryError, git.NoSuchPathError):
             return False
 
     def clone(self):
@@ -436,7 +436,21 @@ class Archive(object):
             raise RuntimeError(
                 'git source does not exist: {}'.format(self.gitsource)
             )
-        remote.pull('master')
+
+        print((
+            'pulling from {} in {}. \n'
+            'Depending on size of repo, this may take several minutes...'
+        ).format(self.gitsource, repo.git_dir))
+        # not using ``remote.pull('master')`` because:
+        #    1. no stdout
+        #    2. synchronizing large tarfiles may take a very long time
+        #    3. remote.pull() seems to have a timeout
+        #
+        # remote.pull('master')  # this works, but no stdout! may take long time...
+
+        subprocess.check_call(
+            ['git', '-C', os.path.dirname(repo.git_dir), 'pull']
+        )
         return True
 
     def push(self):

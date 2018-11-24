@@ -419,9 +419,18 @@ class Server(socketserver.UnixStreamServer):
         )
 
     def set_archive(self, archive):
-        data = self.data.read()
-        index = data['archives'][archive]['last_index']
-        self.display(archive, index)
+        try:
+            data = self.data.read()
+            index = data['archives'][archive]['last_index']
+            self.display(archive, index)
+        except(KeyError):
+            raise RuntimeError(
+                (
+                    'unable to set archive to "{}". '
+                    'If config is correct and archive exists, '
+                    'try ``wallmger archive {} --pull`` followed by ``wallmgr reload``.'
+                ).format(archive, archive)
+            )
 
     def set_change_interval(self, seconds):
         self.__timer.set_interval(seconds)
