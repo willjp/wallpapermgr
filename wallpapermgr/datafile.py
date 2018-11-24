@@ -583,12 +583,6 @@ class Data(object):
                 types={'last_index': int, 'sequence': list},
             )
 
-            for path in data['archives'][name]['sequence']:
-                if any([x in path for x in ('\\', '/')]):
-                    raise RuntimeError(
-                        'path must be filename only. Received "{}"'.format(path)
-                    )
-
     def index(self, archive):
         """ Returns value of `last_index` in archive.
 
