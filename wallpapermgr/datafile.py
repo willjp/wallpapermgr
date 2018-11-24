@@ -477,11 +477,11 @@ class Archive(object):
             return
 
         # add all changes
-        repo.git.add(update=True)
+        repo.git.add(A=True)  # add all files (tracked/untracked)
         repo.git.commit(
             '-m',
             '{} {}'.format(operation, repr(filepaths)),
-            author='wallpapermgr@domain.com'
+            author='wallpapermgr <wallpapermgr@domain.com>'
         )
 
 
