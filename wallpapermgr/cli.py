@@ -122,11 +122,11 @@ class CommandlineInterface(object):
 
         # interact-with server
         subparser_map = {
-            'next': display.next,
-            'prev': display.prev,
-            'reload': display.reload,
+            'next': lambda: display.Server.request('next'),
+            'prev': lambda: display.Server.request('prev'),
+            'reload': lambda: display.Server.request('reload'),
             'ls': datafile.print_archive_list,
-            'stop': display.stop,
+            'stop': lambda: display.Server.request(display.RequestHandler.stop_command)
         }
 
         # subparser handling

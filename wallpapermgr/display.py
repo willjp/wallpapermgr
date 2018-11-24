@@ -28,20 +28,6 @@ def change_archive(archive_name):
     Server.request('archive {}'.format(archive_name))
 
 
-def next():
-    """ Show next wallpaper within current archive,
-    starting server if not running.
-    """
-    Server.request('next')
-
-
-def prev():
-    """ Show previous wallpaper within current archive,
-    starting server if not running.
-    """
-    Server.request('prev')
-
-
 def reload():
     """ Re-reads each archive, shuffles order,
     and if server is already running, reloads data within server.
@@ -60,12 +46,6 @@ def stop():
     """ Request shutdown of the wallpapermgr server.
     """
     Server.request('stop')
-
-
-def change_interval(seconds):
-    """ If set to a value above 0, a new wallpaper will be displayed every N `seconds` . (WIP)
-    """
-    Server.request('interval {}'.format(seconds))
 
 
 class RequestHandler(socketserver.BaseRequestHandler):
@@ -482,7 +462,7 @@ class _ChangeWallpaperTimer(threading.Thread):
                 continue
 
             if (time.time() - self.__time_changed) >= self.__interval:
-                next()
+                Server.request('next')
                 self.__lock.acquire()
                 self.__time_changed = time.time()
                 self.__lock.release()
