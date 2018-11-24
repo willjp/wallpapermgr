@@ -451,6 +451,9 @@ class Archive(object):
         subprocess.check_call(
             ['git', '-C', os.path.dirname(repo.git_dir), 'pull']
         )
+        subprocess.check_call(
+            ['git', '-C', os.path.dirname(repo.git_dir), 'checkout', 'master']
+        )
         return True
 
     def push(self):
