@@ -140,7 +140,7 @@ class CommandlineInterface(object):
         # change archive
         all_args = (args.add, args.remove, args.pull, args.push)
         if len([x for x in all_args if x]) == 0:
-            display.change_archive(args.archive)
+            display.Server.request('archive {}'.format(args.archive))
             return
 
         archive = datafile.Archive(args.archive)

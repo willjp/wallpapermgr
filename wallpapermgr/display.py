@@ -21,33 +21,6 @@ from wallpapermgr import datafile
 logger = logging.getLogger(__name__)
 
 
-def change_archive(archive_name):
-    """ Set archive that wallpapers are being displayed from,
-    starting server if not running.
-    """
-    Server.request('archive {}'.format(archive_name))
-
-
-def reload():
-    """ Re-reads each archive, shuffles order,
-    and if server is already running, reloads data within server.
-
-    .. note::
-        does *not* start server if not already running.
-
-    """
-    data = datafile.Data()
-    data.reload_archive()
-    if Server.is_active():
-        Server.request('reload')
-
-
-def stop():
-    """ Request shutdown of the wallpapermgr server.
-    """
-    Server.request('stop')
-
-
 class RequestHandler(socketserver.BaseRequestHandler):
     """ SocketServer RequestHandler, parses/executes commands.
     """
