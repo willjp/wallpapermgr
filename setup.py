@@ -5,19 +5,22 @@ import setuptools
 import os
 # internal
 import wallpapermgr
+import subprocess
 
 
 __version__ = wallpapermgr.__version__
 
 
 def get_man_path():
-    paths = ('/usr/man/man1',)
-    for path in paths:
+    pipe = subprocess.Popen(['manpath'], 
+                            stdout=subprocess.PIPE, 
+                            universal_newlines=True)
+    (stdout, stderr) = pipe.communicate()
+    manpaths = stdout.split(os.path.pathsep)
+    for path in manpaths:
         if os.path.isdir(path):
             return path
-    raise RuntimeError(
-        'Unable to determine manpath'
-    )
+    raise RuntimeError('Unable to determine manpath')
 
 
 def get_zsh_completionpath():
