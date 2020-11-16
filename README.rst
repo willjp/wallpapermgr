@@ -1,3 +1,4 @@
+:warning: I don't use this anymore, you probably shouldn't. Replaced by a smaller/more useful bash script.
 
 wallpapermgr
 ============
